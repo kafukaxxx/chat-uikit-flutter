@@ -8,6 +8,7 @@ import 'package:tencent_cloud_chat_uikit/ui/constants/time.dart';
 import 'package:collection/collection.dart';
 import 'package:tencent_cloud_chat_uikit/ui/utils/common_utils.dart';
 import 'package:tencent_cloud_chat_uikit/ui/utils/logger.dart';
+import 'package:wb_flutter_tool/wb_flutter_tool.dart';
 
 class MessageUtils {
   // 判断CallingData的方式和Trtc的方法一致
@@ -57,6 +58,7 @@ class MessageUtils {
         break;
       case GroupChangeInfoType.V2TIM_GROUP_INFO_CHANGE_TYPE_NOTIFICATION:
         s = TIM_t("群公告");
+        value = AESTools.decryptString(value ?? "");
         break;
       case GroupChangeInfoType.V2TIM_GROUP_INFO_CHANGE_TYPE_OWNER:
         s = TIM_t("群主");
@@ -239,9 +241,6 @@ class MessageUtils {
     return formatTime;
   }
 
-  static String handleCustomMessageString(V2TimMessage message) {
-    return TIM_t("消息");
-  }
 
   static Widget wrapMessageTips(Widget child, TUITheme? theme) {
     return Container(
@@ -257,13 +256,14 @@ class MessageUtils {
       case MessageElemType.V2TIM_ELEM_TYPE_SOUND:
         return TIM_t("[语音]");
       case MessageElemType.V2TIM_ELEM_TYPE_TEXT:
-        return message.textElem!.text as String;
+        return AESTools.getLanguageText(AESTools.decryptString(message.textElem!.text as String));
       case MessageElemType.V2TIM_ELEM_TYPE_FACE:
         return TIM_t("[表情]");
       case MessageElemType.V2TIM_ELEM_TYPE_FILE:
-        final String? option2 = message.fileElem!.fileName ?? "";
-        return TIM_t_para("[文件] {{option2}}", "[文件] $option2")(
-            option2: option2);
+        // final String? option2 = message.fileElem!.fileName ?? "";
+        // return TIM_t_para("[文件] {{option2}}", "[文件] $option2")(
+        //     option2: option2);
+        return TIM_t("[图片]");
       case MessageElemType.V2TIM_ELEM_TYPE_GROUP_TIPS:
         return TIM_t("群提示");
       case MessageElemType.V2TIM_ELEM_TYPE_IMAGE:
@@ -293,6 +293,30 @@ class MessageUtils {
       outputLogger.i('getImageFromImgList error ${e.toString()}');
     }
     return img;
+  }
+  static String handleCustomMessageString(V2TimMessage message) {
+    final customElem = message.customElem;
+    final customMessage = jsonDecode(customElem!.data!);
+    String customLastMsgShow = TIM_t("[自定义]");
+    String businessID = customMessage["businessID"];
+    if (businessID == "dgg_group_businessId") {
+      customLastMsgShow = "[群名片]";
+    } else if (businessID == "dgg_businessId") {
+      customLastMsgShow = "[名片]";
+    } else if (businessID == "red_packet_tips") {
+      //红包领取
+      customLastMsgShow = "[红包变动]";
+    } else if (businessID == "red_packet") {
+      //红包
+      customLastMsgShow = "[红包]";
+    } else if (businessID == "dgg_clearGroupMsg") {
+      //FIXME:清屏
+
+    } else if (businessID == "transfer_c2c") {
+      //转账
+      customLastMsgShow = "[转账]";
+    }
+    return TIM_t(customLastMsgShow);
   }
 
   static String getDisplayName(V2TimMessage message) {

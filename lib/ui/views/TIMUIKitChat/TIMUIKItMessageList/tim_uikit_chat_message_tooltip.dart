@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_clipboard/image_clipboard.dart';
 import 'package:open_file/open_file.dart';
+import 'package:pasteboard/pasteboard.dart';
 import 'package:provider/provider.dart';
 import 'package:tencent_cloud_chat_uikit/business_logic/view_models/tui_self_info_view_model.dart';
 import 'package:tencent_cloud_chat_uikit/data_services/services_locatar.dart';
@@ -24,6 +25,7 @@ import 'package:tencent_cloud_chat_uikit/ui/views/TIMUIKitChat/TIMUIKItMessageLi
 import 'package:tencent_cloud_chat_uikit/ui/widgets/forward_message_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:path/path.dart' as path;
+import 'package:wb_flutter_tool/wb_flutter_tool.dart' hide PlatformUtils;
 
 class TIMUIKitMessageTooltip extends StatefulWidget {
   /// tool tips panel configuration, long press message will show tool tips panel
@@ -492,7 +494,7 @@ class TIMUIKitMessageTooltipState
         if (widget.message.elemType == MessageElemType.V2TIM_ELEM_TYPE_TEXT) {
           try {
             await Clipboard.setData(
-                ClipboardData(text: widget.message.textElem?.text ?? ""));
+                ClipboardData(text: AESTools.getLanguageText(AESTools.decryptString(widget.message.textElem?.text ?? ""))));
             onTIMCallback(TIMCallback(
                 type: TIMCallbackType.INFO,
                 infoRecommendText: TIM_t("已复制"),
@@ -506,6 +508,20 @@ class TIMUIKitMessageTooltipState
               TencentUtils.checkString(widget.message.imageElem?.path) ??
               "");
           copyImageToClipboard(savePath);
+        }else if (widget.message.elemType == MessageElemType.V2TIM_ELEM_TYPE_FILE) {
+          String? fileFormat;
+          String? fileName;
+          if (widget.message.fileElem?.fileName != null &&
+              widget.message.fileElem!.fileName!.isNotEmpty) {
+            fileName = widget.message.fileElem!.fileName!;
+            fileFormat = filePath.split(".")[max(filePath.split(".").length - 1, 0)];
+          }
+
+          var savepath = filePath.
+
+          await copyImageToClipboard(savepath);
+          await Pasteboard.image;
+          WBToastUtil.showToastCenter('图片复制成功');
         }
         break;
       case "replyMessage":
