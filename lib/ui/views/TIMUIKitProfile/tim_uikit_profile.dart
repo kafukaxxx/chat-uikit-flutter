@@ -11,6 +11,7 @@ import 'package:tencent_cloud_chat_uikit/base_widgets/tim_ui_kit_base.dart';
 import 'package:tencent_cloud_chat_uikit/ui/utils/screen_utils.dart';
 import 'package:tencent_cloud_chat_uikit/ui/views/TIMUIKitProfile/profile_widget.dart';
 import 'package:tencent_cloud_chat_uikit/ui/views/TIMUIKitProfile/widget/tim_uikit_profile_widget.dart';
+import 'package:wb_flutter_tool/wb_flutter_tool.dart';
 
 typedef OnSelfAvatarTap = void Function();
 
@@ -268,23 +269,33 @@ class _TIMUIKitProfileState extends TIMUIKitState<TIMUIKitProfile> {
             });
           }
 
-          void handleDeleteFriend() {
-            model.deleteFriend(userInfo.userID).then((res) {
-              if (res == null) {
-                throw Error();
-              }
-              if (res.resultCode != 0 && res.resultCode != null) {
-                onTIMCallback(TIMCallback(
-                    type: TIMCallbackType.INFO,
-                    infoRecommendText: TIM_t("好友删除失败"),
-                    infoCode: 6661207));
+          void handleDeleteFriend() async{
+            var res =
+                await WBsyncHttpRequest().post(WBApi.getConfig, showHud: true);
+            if (res.code == 200) {
+              final isDeleteFriend = res.data['admin_delete_friend'].toString(); //1删除。 0不能删除
+              if (int.parse(isDeleteFriend) == 1) {
+                model.deleteFriend(userInfo.userID).then((res) {
+                  if (res == null) {
+                    throw Error();
+                  }
+
+                  if (res.resultCode != 0 && res.resultCode != null) {
+                    onTIMCallback(TIMCallback(
+                        type: TIMCallbackType.INFO,
+                        infoRecommendText: TIM_t("好友删除失败"),
+                        infoCode: 6661207));
+                  } else {
+                    onTIMCallback(TIMCallback(
+                        type: TIMCallbackType.INFO,
+                        infoRecommendText: TIM_t("好友删除成功"),
+                        infoCode: 6661206));
+                  }
+                });
               } else {
-                onTIMCallback(TIMCallback(
-                    type: TIMCallbackType.INFO,
-                    infoRecommendText: TIM_t("好友删除成功"),
-                    infoCode: 6661206));
+                WBToastUtil.showToastCenter('禁止删除好友');
               }
-            });
+            }
           }
 
           List<Widget> _renderWidgetsWithOrder(List<ProfileWidgetEnum> order) {
@@ -301,6 +312,7 @@ class _TIMUIKitProfileState extends TIMUIKitState<TIMUIKitProfile> {
                   if (isSelf) {
                     return Container();
                   }
+                  return Container();
                   return (customBuilder?.addToBlockListBar != null
                       ? customBuilder?.addToBlockListBar!(
                           model.isAddToBlackList ?? false, handleAddToBlockList)

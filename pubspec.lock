@@ -1765,7 +1765,7 @@ packages:
     description:
       path: "."
       ref: HEAD
-      resolved-ref: "5b8b8b1173c5ccc51ec36a2c116e1949bffa40bf"
+      resolved-ref: "788952e53fe98371997701c691c6be123bfb0262"
       url: "http://jarvis:apple123@192.168.4.209:8081/ios/wb_flutter_tool.git"
     source: git
     version: "0.0.1"
