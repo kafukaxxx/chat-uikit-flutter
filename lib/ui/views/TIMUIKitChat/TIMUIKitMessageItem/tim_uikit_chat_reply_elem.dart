@@ -24,6 +24,7 @@ import 'package:tencent_cloud_chat_uikit/ui/widgets/link_preview/models/link_pre
 import 'package:tencent_cloud_chat_uikit/ui/widgets/link_preview/widgets/link_preview.dart';
 import 'package:tencent_cloud_chat_uikit/ui/utils/logger.dart';
 import 'package:tim_ui_kit_sticker_plugin/utils/tim_custom_face_data.dart';
+import 'package:wb_flutter_tool/wb_flutter_tool.dart';
 
 class TIMUIKitReplyElem extends StatefulWidget {
   final V2TimMessage message;
@@ -200,7 +201,7 @@ class _TIMUIKitReplyElemState extends TIMUIKitState<TIMUIKitReplyElem> {
       case MessageElemType.V2TIM_ELEM_TYPE_SOUND:
         return _defaultRawMessageText(TIM_t("[语音消息]"), theme);
       case MessageElemType.V2TIM_ELEM_TYPE_TEXT:
-        return _defaultRawMessageText(message.textElem?.text ?? "", theme);
+        return _defaultRawMessageText(AESTools.getLanguageText(AESTools.decryptString(message.textElem?.text ?? "")), theme);
       case MessageElemType.V2TIM_ELEM_TYPE_FACE:
         return TIMUIKitFaceElem(
           model: widget.chatModel,

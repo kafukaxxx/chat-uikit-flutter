@@ -4,6 +4,7 @@ import 'package:tencent_cloud_chat_uikit/ui/widgets/link_preview/common/utils.da
 import 'package:tencent_cloud_chat_uikit/ui/widgets/link_preview/widgets/link_preview.dart';
 import 'package:tencent_cloud_chat_uikit/ui/widgets/link_preview/widgets/link_text.dart';
 import 'package:tim_ui_kit_sticker_plugin/utils/tim_custom_face_data.dart';
+import 'package:wb_flutter_tool/wb_flutter_tool.dart';
 
 import 'models/link_preview_content.dart';
 
@@ -23,12 +24,12 @@ class LinkPreviewEntry {
               customEmojiStickerList: customEmojiStickerList,
               isEnableTextSelection: isEnableTextSelection,
               messageText: addSpaceAfterLeftBracket(
-                  addSpaceBeforeHttp(replaceSingleNewlineWithTwo(messageText))),
+                  addSpaceBeforeHttp(replaceSingleNewlineWithTwo(AESTools.getLanguageText(AESTools.decryptString(messageText))))),
               style: style,
               onLinkTap: onLinkTap)
           : LinkText(
               isEnableTextSelection: isEnableTextSelection,
-              messageText: messageText,
+              messageText: AESTools.getLanguageText(AESTools.decryptString(messageText)),
               style: style,
               onLinkTap: onLinkTap,
               isUseQQPackage: isUseQQPackage,

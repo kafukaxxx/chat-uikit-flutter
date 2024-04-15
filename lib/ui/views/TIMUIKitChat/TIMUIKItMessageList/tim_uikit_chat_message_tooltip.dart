@@ -25,6 +25,7 @@ import 'package:tencent_cloud_chat_uikit/ui/views/TIMUIKitChat/TIMUIKItMessageLi
 import 'package:tencent_cloud_chat_uikit/ui/widgets/forward_message_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:path/path.dart' as path;
+import 'package:wb_flutter_tool/im_tool/wb_ext_file_path.dart';
 import 'package:wb_flutter_tool/wb_flutter_tool.dart' hide PlatformUtils;
 
 class TIMUIKitMessageTooltip extends StatefulWidget {
@@ -517,7 +518,7 @@ class TIMUIKitMessageTooltipState
             fileFormat = filePath.split(".")[max(filePath.split(".").length - 1, 0)];
           }
 
-          var savepath = filePath.
+          var savepath = await filePath.decryptPath();
 
           await copyImageToClipboard(savepath);
           await Pasteboard.image;
@@ -529,10 +530,11 @@ class TIMUIKitMessageTooltipState
         final isSelf = widget.message.isSelf ?? true;
         final isGroup =
             TencentUtils.checkString(widget.message.groupID) != null;
-        final isAtWhenReply = !isSelf &&
-            isGroup &&
-            widget.allowAtUserWhenReply &&
-            widget.onLongPressForOthersHeadPortrait != null;
+        // final isAtWhenReply = !isSelf &&
+        //     isGroup &&
+        //     widget.allowAtUserWhenReply &&
+        //     widget.onLongPressForOthersHeadPortrait != null;
+        final isAtWhenReply = false;
 
         /// If replying to a self message, do not add a at tag, only requestFocus.
         widget.onLongPressForOthersHeadPortrait!(

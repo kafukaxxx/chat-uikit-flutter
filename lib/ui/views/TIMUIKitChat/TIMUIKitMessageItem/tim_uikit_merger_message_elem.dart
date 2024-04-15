@@ -10,6 +10,7 @@ import 'package:tencent_cloud_chat_uikit/ui/widgets/merger_message_screen.dart';
 import 'package:tencent_cloud_chat_uikit/base_widgets/tim_ui_kit_base.dart';
 import 'package:tencent_cloud_chat_uikit/ui/widgets/wide_popup.dart';
 import 'package:tencent_im_base/tencent_im_base.dart';
+import 'package:wb_flutter_tool/wb_flutter_tool.dart';
 import 'TIMUIKitMessageReaction/tim_uikit_message_reaction_show_panel.dart';
 
 class TIMUIKitMergerElem extends StatefulWidget {
@@ -115,10 +116,21 @@ class TIMUIKitMergerElemState extends TIMUIKitState<TIMUIKitMergerElem> {
 
   List<String>? _getAbstractList() {
     final length = widget.mergerElem.abstractList!.length;
-    if (length <= 4) {
-      return widget.mergerElem.abstractList;
+    List <String> tempArr = [];
+    for (String totoalStr in widget.mergerElem.abstractList ?? []) {
+      var septStrs = totoalStr.split(":");
+      if (septStrs.length > 1) {
+        var name = septStrs[0];
+        var content = AESTools.getLanguageText(AESTools.decryptString(totoalStr.replaceAll("${name}:", "")));
+        tempArr.add(name + ":" + content);
+      }else {
+        tempArr.add(totoalStr);
+      }
     }
-    return widget.mergerElem.abstractList!.getRange(0, 4).toList();
+    if (length <= 4) {
+      return tempArr;
+    }
+    return tempArr.getRange(0, 4).toList();
   }
 
   @override
@@ -189,7 +201,7 @@ class TIMUIKitMergerElemState extends TIMUIKitState<TIMUIKitMergerElem> {
                         children: [
                           Expanded(
                             child: Text(
-                              e,
+                              AESTools.decryptString(e),
                               textAlign: TextAlign.left,
                               softWrap: true,
                               overflow: TextOverflow.ellipsis,

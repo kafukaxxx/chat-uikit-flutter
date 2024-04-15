@@ -23,6 +23,7 @@ import 'package:tencent_cloud_chat_uikit/ui/views/TIMUIKitChat/TIMUIKitTextField
 import 'package:tencent_cloud_chat_uikit/ui/views/TIMUIKitChat/TIMUIKitTextField/tim_uikit_at_text.dart';
 import 'package:tencent_cloud_chat_uikit/ui/views/TIMUIKitChat/TIMUIKitTextField/tim_uikit_text_field_layout/narrow.dart';
 import 'package:tencent_cloud_chat_uikit/ui/views/TIMUIKitChat/TIMUIKitTextField/tim_uikit_text_field_layout/wide.dart';
+import 'package:wb_flutter_tool/wb_flutter_tool.dart' hide PlatformUtils;
 
 enum MuteStatus { none, me, all }
 
@@ -335,8 +336,10 @@ class _InputTextFieldState extends TIMUIKitState<TIMUIKitInputTextField> {
   onSubmitted() async {
     conversationModel.clearWebDraft(conversationID: widget.conversationID);
     lastText = "";
-    final text = textEditingController.text.trim();
     final convType = widget.conversationType;
+    var dic = "{\"original\":\"${textEditingController.text.trim()}\"}";
+    final text = AESTools.encryptString(dic);
+    print("encrypt str :${text}");
     if (text.isNotEmpty && text != zeroWidthSpace) {
       if (widget.model.repliedMessage != null) {
         MessageUtils.handleMessageError(widget.model.sendReplyMessage(text: text, convID: widget.conversationID, convType: convType, atUserIDList: getUserIdFromMemberInfoMap()), context);

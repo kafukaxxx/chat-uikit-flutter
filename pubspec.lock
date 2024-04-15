@@ -25,6 +25,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "6.0.0"
+  archive:
+    dependency: transitive
+    description:
+      name: archive
+      sha256: "22600aa1e926be775fa5fe7e6894e7fb3df9efda8891c73f70fb3262399a432d"
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.4.10"
   args:
     dependency: transitive
     description:
@@ -739,6 +747,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.0.2"
+  image:
+    dependency: transitive
+    description:
+      name: image
+      sha256: "4c68bfd5ae83e700b5204c1e74451e7bf3cf750e6843c6e158289cf56bda018e"
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.1.7"
   image_clipboard:
     dependency: "direct main"
     description:
@@ -1749,7 +1765,7 @@ packages:
     description:
       path: "."
       ref: HEAD
-      resolved-ref: f8c8b84b1758532956da897157366ce295720e93
+      resolved-ref: "5b8b8b1173c5ccc51ec36a2c116e1949bffa40bf"
       url: "http://jarvis:apple123@192.168.4.209:8081/ios/wb_flutter_tool.git"
     source: git
     version: "0.0.1"
