@@ -17,7 +17,7 @@ class GroupProfileButtonArea extends TIMUIKitStatelessWidget {
   final sdkInstance = TIMUIKitCore.getSDKInstance();
   final coreInstance = TIMUIKitCore.getInstance();
   final TIMUIKitChatController _timuiKitChatController =
-      TIMUIKitChatController();
+  TIMUIKitChatController();
 
   GroupProfileButtonArea(this.groupID, this.model, {Key? key})
       : super(key: key);
@@ -287,64 +287,64 @@ class GroupProfileButtonArea extends TIMUIKitStatelessWidget {
         TUIKitScreenUtils.getFormFactor(context) == DeviceType.Desktop;
     return _operationList
         .where((element) {
-          if (!isOwner) {
-            return ["quitGroup", "clearHistory"].contains(element["id"]);
-          } else {
-            if (groupType == "Work") {
-              return ["clearHistory", "quitGroup", "transimitOwner"]
-                  .contains(element["id"]);
-            }
-            if (groupType != "Work") {
-              return ["clearHistory", "dismissGroup", "transimitOwner"]
-                  .contains(element["id"]);
-            }
-            return true;
-          }
-        })
+      if (!isOwner) {
+        return ["quitGroup", "clearHistory"].contains(element["id"]);
+      } else {
+        if (groupType == "Work") {
+          return ["clearHistory", "quitGroup", "transimitOwner"]
+              .contains(element["id"]);
+        }
+        // if (groupType != "Work") {
+        //   return ["clearHistory", "dismissGroup", "transimitOwner"]
+        //       .contains(element["id"]);
+        // }
+        return true;
+      }
+    })
         .map((e) => isDesktopScreen
-            ? OutlinedButton(
-                onPressed: () {
-                  if (e["id"]! == "clearHistory") {
-                    _clearHistory(context, theme);
-                  } else if (e["id"] == "quitGroup") {
-                    _quitGroup(context, theme);
-                  } else if (e["id"] == "dismissGroup") {
-                    _dismissGroup(context, theme);
-                  } else if (e["id"] == "transimitOwner") {
-                    _transmitOwner(context, groupID);
-                  }
-                },
-                child: Text(
-                  e["label"]!,
-                  style: TextStyle(color: theme.cautionColor),
-                ))
-            : InkWell(
-                onTap: () {
-                  if (e["id"]! == "clearHistory") {
-                    _clearHistory(context, theme);
-                  } else if (e["id"] == "quitGroup") {
-                    _quitGroup(context, theme);
-                  } else if (e["id"] == "dismissGroup") {
-                    _dismissGroup(context, theme);
-                  } else if (e["id"] == "transimitOwner") {
-                    _transmitOwner(context, groupID);
-                  }
-                },
-                child: Container(
-                  alignment: Alignment.center,
-                  padding: const EdgeInsets.symmetric(vertical: 15),
-                  decoration: BoxDecoration(
-                      color: Colors.white,
-                      border: Border(
-                          bottom: BorderSide(
-                              color: theme.weakDividerColor ??
-                                  CommonColor.weakDividerColor))),
-                  child: Text(
-                    e["label"]!,
-                    style: TextStyle(color: theme.cautionColor, fontSize: 17),
-                  ),
-                ),
-              ))
+        ? OutlinedButton(
+        onPressed: () {
+          if (e["id"]! == "clearHistory") {
+            _clearHistory(context, theme);
+          } else if (e["id"] == "quitGroup") {
+            _quitGroup(context, theme);
+          } else if (e["id"] == "dismissGroup") {
+            _dismissGroup(context, theme);
+          } else if (e["id"] == "transimitOwner") {
+            _transmitOwner(context, groupID);
+          }
+        },
+        child: Text(
+          e["label"]!,
+          style: TextStyle(color: theme.cautionColor),
+        ))
+        : InkWell(
+      onTap: () {
+        if (e["id"]! == "clearHistory") {
+          _clearHistory(context, theme);
+        } else if (e["id"] == "quitGroup") {
+          _quitGroup(context, theme);
+        } else if (e["id"] == "dismissGroup") {
+          _dismissGroup(context, theme);
+        } else if (e["id"] == "transimitOwner") {
+          _transmitOwner(context, groupID);
+        }
+      },
+      child: Container(
+        alignment: Alignment.center,
+        padding: const EdgeInsets.symmetric(vertical: 15),
+        decoration: BoxDecoration(
+            color: Colors.white,
+            border: Border(
+                bottom: BorderSide(
+                    color: theme.weakDividerColor ??
+                        CommonColor.weakDividerColor))),
+        child: Text(
+          e["label"]!,
+          style: TextStyle(color: theme.cautionColor, fontSize: 17),
+        ),
+      ),
+    ))
         .toList();
   }
 

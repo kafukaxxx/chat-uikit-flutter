@@ -39,7 +39,14 @@ class GroupProfileMemberListPageState
   bool isSearchTextExist(String? searchText) {
     return searchText != null && searchText != "";
   }
-
+  _getShowName(V2TimGroupMemberFullInfo? item) {
+    final friendRemark = item?.friendRemark ?? "";
+    final nameCard = item?.nameCard ?? "";
+    final nickName = item?.nickName ?? "";
+    final userID = item?.userID;
+    final showName = (nameCard == "") ? (nickName != "" ? nickName : userID) : nameCard;
+    return friendRemark != "" ? friendRemark : showName;
+  }
   handleSearchGroupMembers(String searchText, context) async {
     searchText = searchText;
     List<V2TimGroupMemberFullInfo?> currentGroupMember =
@@ -52,28 +59,39 @@ class GroupProfileMemberListPageState
       });
       return;
     }
-
-    final res =
-        await widget.model.searchGroupMember(V2TimGroupMemberSearchParam(
-      keywordList: [searchText],
-      groupIDList: [widget.model.groupInfo!.groupID],
-    ));
-
-    if (res.code == 0) {
-      List<V2TimGroupMemberFullInfo?> list = [];
-      final searchResult = res.data!.groupMemberSearchResultItems!;
-      searchResult.forEach((key, value) {
-        if (value is List) {
-          for (V2TimGroupMemberFullInfo item in value) {
-            list.add(item);
-          }
-        }
-      });
-
-      currentGroupMember = list;
-    } else {
-      currentGroupMember = [];
+    List<V2TimGroupMemberFullInfo?> localSearch = [];
+    for (V2TimGroupMemberFullInfo? info in currentGroupMember) {
+      if (_getShowName(info).contains(searchText) == true || info?.userID.contains(searchText) == true) {
+        localSearch.add(info);
+      }
     }
+    // final res =
+    //     await widget.model.searchGroupMember(V2TimGroupMemberSearchParam(
+    //   keywordList: [searchText],
+    //   groupIDList: [widget.model.groupInfo!.groupID],
+    // ));
+
+    // if (res.code == 0) {
+    List<V2TimGroupMemberFullInfo?> list = [];
+    List<V2TimFriendInfo> friends = widget.model.contactList;
+    // final searchResult = res.data!.groupMemberSearchResultItems!;
+    // searchResult.forEach((key, value) {
+    //   if (value is List) {
+    for (V2TimGroupMemberFullInfo? item in localSearch) {
+      List<V2TimFriendInfo> temps =  friends.where((element) => element.userID == (item?.userID ?? "")).toList();
+      if (temps.length > 0) {
+        V2TimFriendInfo friend = temps.first;
+        item?.friendRemark = friend.friendRemark;
+      }
+      list.add(item);
+    }
+    //   }
+    // });
+
+    currentGroupMember = list;
+    // } else {
+    //   currentGroupMember = [];
+    // }
     setState(() {
       searchMemberList = currentGroupMember;
     });
@@ -90,7 +108,7 @@ class GroupProfileMemberListPageState
       ],
       builder: (BuildContext context, Widget? w) {
         final TUIGroupProfileModel groupProfileModel =
-            Provider.of<TUIGroupProfileModel>(context);
+        Provider.of<TUIGroupProfileModel>(context);
         String option1 = groupProfileModel.groupInfo?.memberCount.toString() ??
             widget.memberList.length.toString();
         if(isDesktopScreen){
@@ -128,9 +146,9 @@ class GroupProfileMemberListPageState
               customTopArea: PlatformUtils().isWeb
                   ? null
                   : GroupMemberSearchTextField(
-                      onTextChange: (text) =>
-                          handleSearchGroupMembers(text, context),
-                    ),
+                onTextChange: (text) =>
+                    handleSearchGroupMembers(text, context),
+              ),
               memberList: searchMemberList ?? groupProfileModel.groupMemberList,
               removeMember: _kickedOffMember,
               touchBottomCallBack: () {},

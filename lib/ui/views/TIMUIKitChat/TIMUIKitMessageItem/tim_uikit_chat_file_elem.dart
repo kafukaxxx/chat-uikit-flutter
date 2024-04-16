@@ -2,6 +2,7 @@
 
 import 'dart:io';
 import 'dart:math';
+import 'dart:typed_data';
 
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
@@ -24,6 +25,8 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:wb_flutter_tool/im_tool/wb_ext_file_path.dart';
 import 'package:wb_flutter_tool/wb_flutter_tool.dart' hide PlatformUtils;
 import 'package:get_storage/get_storage.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
+import 'package:tencent_cloud_chat_sdk/tencent_im_sdk_plugin.dart';
 
 class TIMUIKitFileElem extends StatefulWidget {
   final String? messageID;
@@ -51,6 +54,8 @@ class _TIMUIKitFileElemState extends TIMUIKitState<TIMUIKitFileElem> {
   final GlobalKey containerKey = GlobalKey();
   double? containerHeight;
   bool? _downloadFailed = false;
+  String imgUrl = "";
+  String decryptLocalPath = "";
 
   @override
   void dispose() {
@@ -66,6 +71,7 @@ class _TIMUIKitFileElemState extends TIMUIKitState<TIMUIKitFileElem> {
         hasFile();
       });
     }
+
     advancedMsgListener = V2TimAdvancedMsgListener(
       onMessageDownloadProgressCallback: (V2TimMessageDownloadProgress messageProgress) async {
         if (messageProgress.msgID == widget.message.msgID) {
@@ -127,11 +133,16 @@ class _TIMUIKitFileElemState extends TIMUIKitState<TIMUIKitFileElem> {
     if (PlatformUtils().isWeb) {
       return true;
     }
-
+    V2TimValueCallback<V2TimMessageOnlineUrl> imgdata = await TencentImSDKPlugin.v2TIMManager.getMessageManager().getMessageOnlineUrl(msgID: widget.messageID!);
+    setState(() {
+      if (mounted) {
+        imgUrl = imgdata.data?.fileElem?.url ?? "";
+      }
+    });
     String savePath = TencentUtils.checkString(model.getFileMessageLocation(widget.messageID)) ?? TencentUtils.checkString(widget.message.fileElem!.localUrl) ?? widget.message.fileElem?.path ?? '';
     print("local file url:${widget.message.fileElem!.localUrl}, path:${widget.message.fileElem?.path}, savedPath:${savePath}");
     if (WBManager().downloadPath == "") {
-      if (savePath.contains("im_flutter_uikit_full_platform")) {
+      if (savePath.contains("TencentCloudChat")) {
         var downloadPath = savePath.split("download").first;
         if (downloadPath.isNotEmpty) {
           WBManager().downloadPath = downloadPath + "/download/";
@@ -150,6 +161,10 @@ class _TIMUIKitFileElemState extends TIMUIKitState<TIMUIKitFileElem> {
     File f = File(savePath);
     if (f.existsSync() && widget.messageID != null) {
       filePath = savePath;
+      var tmpstr = await filePath.decryptPath();
+      setState(() {
+        decryptLocalPath = tmpstr;
+      });
       if (downloadProgress != 100) {
         setState(() {
           downloadProgress = 100;
@@ -379,72 +394,53 @@ class _TIMUIKitFileElemState extends TIMUIKitState<TIMUIKitFileElem> {
                   onTIMCallback(TIMCallback(type: TIMCallbackType.INFO, infoRecommendText: "文件处理异常", infoCode: 6660416));
                 }
               },
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxHeight: 72),
-                child: Container(
-                  width: 237,
-                  decoration: BoxDecoration(
-                      border: Border.all(
-                        color: theme.weakDividerColor ?? CommonColor.weakDividerColor,
-                      ),
-                      borderRadius: borderRadius),
-                  child: Stack(children: [
-                    ClipRRect(
-                      borderRadius: borderRadius,
-                      child: LinearProgressIndicator(
-                        minHeight: ((containerHeight) ?? 72) - 6,
-                        value: (received == 100 ? 0 : received) / 100,
-                        backgroundColor: received == 100 ? theme.weakBackgroundColor : Colors.white,
-                        valueColor: AlwaysStoppedAnimation(theme.lightPrimaryMaterialColor.shade50),
-                      ),
-                    ),
-                    Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                        child: Row(mainAxisAlignment: widget.isSelf ? MainAxisAlignment.end : MainAxisAlignment.start, children: [
-                          Expanded(
-                              child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Container(
-                                constraints: const BoxConstraints(maxWidth: 160),
-                                child: LayoutBuilder(
-                                  builder: (buildContext, boxConstraints) {
-                                    return CustomText(
-                                      fileName,
-                                      width: boxConstraints.maxWidth,
-                                      maxLines: 1,
-                                      style: TextStyle(
-                                        color: theme.darkTextColor,
-                                        fontSize: 16,
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ),
-                              if (fileSize != null)
-                                Text(
-                                  showFileSize(fileSize),
-                                  style: TextStyle(fontSize: 14, color: theme.weakTextColor),
-                                )
-                            ],
-                          )),
-                          TIMUIKitFileIcon(
-                            fileFormat: fileFormat,
-                          ),
-                        ])),
-                  ]),
-                ),
-              ),
+              child:imgUrl.isEmpty ? Text("处理中.....") : (decryptLocalPath.isEmpty ?  _renderCacheImage(url: imgUrl) : Container(
+                child: Image.file(File(decryptLocalPath),width: 200,),
+              )),
             )),
-        if (!widget.isSelf && isWebDownloading)
-          Container(
-            margin: const EdgeInsets.only(top: 2),
-            child: LoadingAnimationWidget.threeArchedCircle(
-              color: theme.weakTextColor ?? Colors.grey,
-              size: 20,
-            ),
-          ),
+        // if (!widget.isSelf && isWebDownloading)
+        //   Container(
+        //     margin: const EdgeInsets.only(top: 2),
+        //     child: LoadingAnimationWidget.threeArchedCircle(
+        //       color: theme.weakTextColor ?? Colors.grey,
+        //       size: 20,
+        //     ),
+        //   ),
       ],
     );
+  }
+  Widget _renderCacheImage({dynamic heroTag,required String url}) {
+    return Container(
+      width: 200,
+      height: 200,
+      color: Colors.grey,
+      child: FutureBuilder(
+        future: DefaultCacheManager().getSingleFile(url),
+        builder: (context,snapshot) {
+          if (snapshot.connectionState == ConnectionState.done &&
+              snapshot.hasData) {
+            return Image.memory(_getFlutterCachedImg(snapshot.data!));
+          } else if (snapshot.hasError) {
+            return Text('Error: ${snapshot.error}');
+          } else {
+            return Container(width: 30,height: 30,child: CircularProgressIndicator(),);
+          }
+        },
+
+      ),
+    );
+  }
+  Uint8List _getFlutterCachedImg(File filex) {
+    try {
+      var aescode = Uint8List.fromList( aesKey.codeUnits);
+      var file = filex.readAsBytesSync();
+      var imgfile = file.sublist(aescode.length,file.length);
+      return imgfile;
+    } catch(e) {
+      print("get localImgData error：${e}");
+
+
+      return Uint8List(0);
+    }
   }
 }

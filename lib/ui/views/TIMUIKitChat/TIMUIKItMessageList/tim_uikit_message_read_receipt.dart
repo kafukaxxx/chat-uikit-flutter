@@ -28,7 +28,7 @@ class TIMUIKitMessageReadReceipt extends TIMUIKitStatelessWidget {
     return Selector<TUIChatGlobalModel, V2TimMessageReceipt?>(
       builder: (context, value, child) {
         // if (value == null || value.unreadCount == 0 && value.readCount == 0) {
-        //   return Container();
+          return Container();
         // }
         return GestureDetector(
           behavior: HitTestBehavior.opaque,

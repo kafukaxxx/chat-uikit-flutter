@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+
 import 'package:tencent_cloud_chat_uikit/base_widgets/tim_ui_kit_state.dart';
 import 'package:tencent_cloud_chat_uikit/business_logic/separate_models/tui_chat_separate_view_model.dart';
 import 'package:tencent_cloud_chat_uikit/data_services/core/tim_uikit_wide_modal_operation_key.dart';
@@ -26,15 +27,15 @@ class TIMUIKitMergerElem extends StatefulWidget {
 
   const TIMUIKitMergerElem(
       {Key? key,
-      required this.message,
-      required this.model,
-      required this.mergerElem,
-      required this.isSelf,
-      this.isShowMessageReaction,
-      required this.messageID,
-      required this.isShowJump,
-      this.clearJump,
-      this.messageItemBuilder})
+        required this.message,
+        required this.model,
+        required this.mergerElem,
+        required this.isSelf,
+        this.isShowMessageReaction,
+        required this.messageID,
+        required this.isShowJump,
+        this.clearJump,
+        this.messageItemBuilder})
       : super(key: key);
 
   @override
@@ -146,7 +147,7 @@ class TIMUIKitMergerElemState extends TIMUIKitState<TIMUIKitMergerElem> {
     return Container(
       constraints: BoxConstraints(
           maxWidth:
-              MediaQuery.of(context).size.width * (isDesktopScreen ? 0.3 : 0.6)),
+          MediaQuery.of(context).size.width * (isDesktopScreen ? 0.3 : 0.6)),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.only(
@@ -198,23 +199,23 @@ class TIMUIKitMergerElemState extends TIMUIKitState<TIMUIKitMergerElem> {
                 children: _getAbstractList()!
                     .map(
                       (e) => Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              AESTools.decryptString(e),
-                              textAlign: TextAlign.left,
-                              softWrap: true,
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 2,
-                              style: TextStyle(
-                                color: theme.weakTextColor,
-                                fontSize: 12,
-                              ),
-                            ),
+                    children: [
+                      Expanded(
+                        child: Text(
+                          AESTools.decryptString(e),
+                          textAlign: TextAlign.left,
+                          softWrap: true,
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 2,
+                          style: TextStyle(
+                            color: theme.weakTextColor,
+                            fontSize: 12,
                           ),
-                        ],
+                        ),
                       ),
-                    )
+                    ],
+                  ),
+                )
                     .toList(),
               ),
               const SizedBox(

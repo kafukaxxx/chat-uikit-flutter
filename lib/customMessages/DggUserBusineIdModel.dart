@@ -10,10 +10,10 @@ class DggUserBusineIdModel extends DGGCustomMsgBaseModel {
       {super.businessID, this.faceURL, this.nickName, this.userID});
 
   DggUserBusineIdModel.fromJson(Map<String, dynamic> json) {
-    businessID = json['businessID'];
-    faceURL = json['faceURL'];
-    nickName = json['nickName'];
-    userID = json['userID'];
+    businessID = json['businessID'].toString();
+    faceURL = json['faceURL'].toString();
+    nickName = json['nickName'].toString();
+    userID = json['userID'].toString();
   }
 
   Map<String, dynamic> toJson() {

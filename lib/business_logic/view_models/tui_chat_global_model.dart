@@ -4,26 +4,33 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
-
 import 'package:flutter/material.dart';
+import 'package:just_audio/just_audio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tencent_cloud_chat_uikit/base_widgets/tim_ui_kit_class.dart';
 import 'package:tencent_cloud_chat_uikit/business_logic/life_cycle/chat_life_cycle.dart';
 import 'package:tencent_cloud_chat_uikit/business_logic/separate_models/tui_chat_model_tools.dart';
+import 'package:tencent_cloud_chat_uikit/business_logic/view_models/tui_conversation_view_model.dart';
+import 'package:tencent_cloud_chat_uikit/data_services/friendShip/friendship_services.dart';
 import 'package:tencent_cloud_chat_uikit/data_services/group/group_services.dart';
 import 'package:tencent_cloud_chat_uikit/data_services/message/message_services.dart';
 import 'package:tencent_cloud_chat_uikit/data_services/services_locatar.dart';
 import 'package:tencent_cloud_chat_uikit/tencent_cloud_chat_uikit.dart';
 import 'package:tencent_cloud_chat_uikit/ui/constants/history_message_constant.dart';
-import 'package:tencent_cloud_chat_uikit/ui/utils/logger.dart';
 import 'package:tencent_cloud_chat_uikit/ui/utils/message.dart';
+import 'package:tencent_cloud_chat_uikit/ui/utils/logger.dart';
 import 'package:tencent_cloud_chat_uikit/ui/utils/platform.dart';
 
 import '../../ui/controller/tim_uikit_chat_controller.dart';
 
 enum ConvType { none, c2c, group }
 
-enum HistoryMessagePosition { bottom, inTwoScreen, awayTwoScreen, notShowLatest }
+enum HistoryMessagePosition {
+  bottom,
+  inTwoScreen,
+  awayTwoScreen,
+  notShowLatest
+}
 
 class CurrentConversation {
   final String conversationID;
@@ -35,6 +42,7 @@ class CurrentConversation {
 class TUIChatGlobalModel extends ChangeNotifier implements TIMUIKitClass {
   final MessageService _messageService = serviceLocator<MessageService>();
   final GroupServices _groupServices = serviceLocator<GroupServices>();
+  final FriendshipServices _friendService = serviceLocator<FriendshipServices>();
   final Map<String, List<V2TimMessage>?> _messageListMap = {};
   final Map<String, V2TimMessageReceipt> _messageReadReceiptMap = {};
   final Map<String, int> _messageListProgressMap = {};
@@ -42,17 +50,20 @@ class TUIChatGlobalModel extends ChangeNotifier implements TIMUIKitClass {
   final Map<String, dynamic> _preloadImageMap = {};
   final Map<String, HistoryMessagePosition> _historyMessagePositionMap = {};
   final List<CurrentConversation> _currentConversationList = [];
+  final _player = AudioPlayer();
+
 
   Map<String, dynamic> get preloadImageMap => _preloadImageMap;
 
   ChatLifeCycle? _lifeCycle;
   bool _isDownloading = false;
-  final List<Map<String, String>> _waitingDownloadList = List.empty(growable: true); // example {"savePath":"","url":"",msgId:""}
+  final List<Map<String, String>> _waitingDownloadList =
+  List.empty(growable: true); // example {"savePath":"","url":"",msgId:""}
   int _totalUnreadCount = 0;
   String localKeyPrefix = "TUIKit_conversation_stored_";
   String localMsgIDListKey = "TUIKit_conversation_list";
 
-  late V2TimAdvancedMsgListener advancedMsgListener;
+  V2TimAdvancedMsgListener? advancedMsgListener;
   int _unreadCountForConversation = 0;
 
   // use for generate a new sliver list to show received message list
@@ -60,39 +71,82 @@ class TUIChatGlobalModel extends ChangeNotifier implements TIMUIKitClass {
   TIMUIKitChatConfig chatConfig = const TIMUIKitChatConfig();
   List<V2TimGroupApplication>? _groupApplicationList;
   String Function(V2TimMessage message)? _abstractMessageBuilder;
-  final Map<String, int> _c2cMessageEditStatusMap = Map.from({}); // 0 normal 1 sending
+  final Map<String, int> _c2cMessageEditStatusMap =
+  Map.from({}); // 0 normal 1 sending
   final Map<String, bool> _c2cMessageFromUserActiveMap = Map.from({});
   final Map<String, Timer> _c2cMessageActiveTimer = Map.from({});
   bool _showC2cMessageEditStatus = true;
   final Map<String, Timer> _c2cMessageStatusShowTimer = Map.from({});
   Map<String, List> loadingMessage = {};
-
+  List<String> _receivedMsgIds = [];
   TUIChatGlobalModel() {
-    advancedMsgListener = V2TimAdvancedMsgListener(
-      onRecvC2CReadReceipt: (List<V2TimMessageReceipt> receiptList) {
-        _onReceiveC2CReadReceipt(receiptList);
-      },
-      onRecvMessageRevoked: (String msgID) {
-        onMessageRevoked(msgID);
-      },
-      onRecvNewMessage: (V2TimMessage newMsg) {
-        _onReceiveNewMsg(newMsg);
-      },
-      onSendMessageProgress: (V2TimMessage messagae, int progress) {
-        _onSendMessageProgress(messagae, progress);
-      },
-      onRecvMessageReadReceipts: (List<V2TimMessageReceipt> receiptList) {
-        _onReceiveMessageReadReceipts(receiptList);
-      },
-      onRecvMessageModified: (V2TimMessage newMsg) {
-        onMessageModified(newMsg);
-      },
-      onMessageDownloadProgressCallback: (V2TimMessageDownloadProgress messageProgress) {
-        onMessageDownloadProgressCallback(messageProgress);
-      },
-    );
-  }
+    _player.setAsset("assets/wechat.mp3");
+    _initListenser();
+    Timer.periodic(Duration(seconds: 3), (timer) {
+      print("我的timer在跑了:任务列表：${_waitingDownloadList.toString()},上次时间:${lastGetDownResponseTime?.millisecondsSinceEpoch}");
+      if (DateTime.now().millisecondsSinceEpoch - (lastGetDownResponseTime?.millisecondsSinceEpoch ?? 0) > 7000) {
+        print("清除任务队列");
+        lastGetDownResponseTime = DateTime.now();
+        clearWaitingList();
+      }
+    });
 
+  }
+  _initListenser() {
+    if (advancedMsgListener == null) {
+      advancedMsgListener = V2TimAdvancedMsgListener(
+        onRecvC2CReadReceipt: (List<V2TimMessageReceipt> receiptList) {
+          _onReceiveC2CReadReceipt(receiptList);
+        },
+        onRecvMessageRevoked: (String msgID) {
+          onMessageRevoked(msgID);
+        },
+        onRecvNewMessage: (V2TimMessage newMsg) {
+          _onReceiveNewMsg(newMsg);
+          if (!_receivedMsgIds.contains(newMsg.msgID)) {
+            _receivedMsgIds.add(newMsg.msgID ?? "");
+
+            final TUIConversationViewModel _conversationViewModel =
+            serviceLocator<TUIConversationViewModel>();
+            List<V2TimConversation?> convs = _conversationViewModel.conversationList;
+            for (V2TimConversation? conv in convs) {
+              if (newMsg.userID == conv?.userID || newMsg.groupID == conv?.groupID) {
+                if (conv?.recvOpt == 0) {
+                  _playWechatAudio();
+                }
+              }
+            }
+          }
+
+
+        },
+        onSendMessageProgress: (V2TimMessage messagae, int progress) {
+          _onSendMessageProgress(messagae, progress);
+        },
+        onRecvMessageReadReceipts: (List<V2TimMessageReceipt> receiptList) {
+          _onReceiveMessageReadReceipts(receiptList);
+        },
+        onRecvMessageModified: (V2TimMessage newMsg) {
+          onMessageModified(newMsg);
+        },
+        onMessageDownloadProgressCallback:
+            (V2TimMessageDownloadProgress messageProgress) {
+          onMessageDownloadProgressCallback(messageProgress);
+          lastGetDownResponseTime = DateTime.now();
+        },
+      );
+    }
+  }
+  _playWechatAudio() async{
+    //播放声音
+    //https://img.tukuppt.com/newpreview_music/01/66/62/63c0ebd3a5faf753.mp3
+
+    if (!_player.playing) {
+      _player.play();
+    }
+
+  }
+  DateTime? lastGetDownResponseTime;
   bool get isDownloading => _isDownloading;
 
   bool get hasWaiting => _waitingDownloadList.isNotEmpty;
@@ -102,6 +156,17 @@ class TUIChatGlobalModel extends ChangeNotifier implements TIMUIKitClass {
   int getWaitingListLength() {
     return _waitingDownloadList.length;
   }
+  void clearWaitingList() {
+    _waitingDownloadList.clear();
+    _isDownloading = false;
+  }
+  Future<V2TimValueCallback<V2TimMessageOnlineUrl>> getOnlineUrl(String msgID) {
+    final result =  TencentImSDKPlugin.v2TIMManager
+        .getMessageManager()
+        .getMessageOnlineUrl(msgID: msgID);
+    return result;
+  }
+
 
   void addWaitingList(String msgID) {
     outputLogger.i("add to waiting list success");
@@ -135,12 +200,20 @@ class TUIChatGlobalModel extends ChangeNotifier implements TIMUIKitClass {
     }
 
     _isDownloading = true;
-    await _messageService.downloadMessage(
+    _messageService.downloadMessage(
       msgID: msgID,
       messageType: 6,
       imageType: 0,
       isSnapshot: false,
     );
+    if (_waitingDownloadList.length > 1) {
+      final secondDownload = _waitingDownloadList[1];
+      final secondMsgId = secondDownload["msgID"] ?? "";
+      if (secondMsgId.isEmpty || _messageListProgressMap[secondMsgId] == 100) {
+        return;
+      }
+      _messageService.downloadMessage(msgID: secondMsgId, messageType: 6, imageType: 0, isSnapshot: false);
+    }
 
     outputLogger.i("start another download");
   }
@@ -484,11 +557,29 @@ class TUIChatGlobalModel extends ChangeNotifier implements TIMUIKitClass {
 
   void refreshGroupApplicationList() async {
     final res = await _groupServices.getGroupApplicationList();
-    _groupApplicationList = res.data?.groupApplicationList?.map((item) {
-          final V2TimGroupApplication applicationItem = item!;
-          return applicationItem;
-        }).toList() ??
-        [];
+    List<String> userIds = res.data?.groupApplicationList?.map((e) => e?.fromUser ?? "").toList() ?? [];
+    V2TimValueCallback<List<V2TimUserFullInfo>> resp = await TencentImSDKPlugin.v2TIMManager.getUsersInfo(userIDList: userIds);
+    if (resp.code == 0) {
+      _groupApplicationList = res.data?.groupApplicationList?.map((item) {
+        V2TimGroupApplication applicationItem = item!;
+        for (V2TimUserFullInfo user in resp.data ?? []) {
+          if (applicationItem.fromUser == user.userID) {
+            applicationItem.fromUserFaceUrl = user.faceUrl;
+            applicationItem.fromUserNickName = user.nickName;
+          }
+        }
+
+        return applicationItem;
+      }).toList() ??
+          [];
+    }else {
+      _groupApplicationList = res.data?.groupApplicationList?.map((item) {
+        final V2TimGroupApplication applicationItem = item!;
+        return applicationItem;
+      }).toList() ??
+          [];
+    }
+
     notifyListeners();
   }
 
@@ -733,12 +824,15 @@ class TUIChatGlobalModel extends ChangeNotifier implements TIMUIKitClass {
     }
   }
 
+
   void addAdvancedMsgListener() {
-    _messageService.addAdvancedMsgListener(listener: advancedMsgListener);
+    _initListenser();
+    _messageService.addAdvancedMsgListener(listener: advancedMsgListener!);
   }
 
   void removeAdvanceMsgListener() {
     _messageService.removeAdvancedMsgListener(listener: advancedMsgListener);
+    advancedMsgListener = null;
   }
 
   markMessageAsRead({

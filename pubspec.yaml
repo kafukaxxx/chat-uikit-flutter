@@ -63,7 +63,7 @@ dependencies:
   tencent_keyboard_visibility: ^1.0.1
   tim_ui_kit_sticker_plugin: ^3.1.0
   tencent_im_base: ^3.3.775296
-  fc_native_video_thumbnail: any
+  fc_native_video_thumbnail: ^0.8.0
   path: ^1.8.1
   tencent_cloud_uikit_core: ^1.2.1
   pasteboard: ^0.2.0
@@ -72,7 +72,8 @@ dependencies:
   cross_file: ^0.3.3+4
   csslib: 0.17.2
   diff_match_patch: ^0.4.1
-  just_audio: ^0.9.34
+  just_audio: ^0.9.37
+  just_audio_windows: ^0.2.0
   markdown: ^7.1.0
   logger: ^2.0.1
   image_clipboard: ^1.0.0+2

@@ -47,7 +47,7 @@ class TUIChatModelTools {
         messageSummary = TIM_t("表情消息");
         break;
       case MessageElemType.V2TIM_ELEM_TYPE_FILE:
-        messageSummary = TIM_t("文件消息");
+        messageSummary = TIM_t("[图片]");
         break;
       case MessageElemType.V2TIM_ELEM_TYPE_GROUP_TIPS:
         messageSummary = TIM_t("群提示消息");
@@ -65,7 +65,7 @@ class TUIChatModelTools {
         messageSummary = TIM_t("语音消息");
         break;
       case MessageElemType.V2TIM_ELEM_TYPE_TEXT:
-        messageSummary = message.textElem!.text!;
+        messageSummary = TIM_t("您有一条新消息");
         break;
       case MessageElemType.V2TIM_ELEM_TYPE_VIDEO:
         messageSummary = TIM_t("视频消息");
@@ -123,7 +123,7 @@ class TUIChatModelTools {
       case MessageElemType.V2TIM_ELEM_TYPE_CUSTOM:
         return "[自定义消息]";
       case MessageElemType.V2TIM_ELEM_TYPE_FILE:
-        return "[文件消息]";
+        return "[图片]";
       case MessageElemType.V2TIM_ELEM_TYPE_GROUP_TIPS:
         return "[群消息]";
       case MessageElemType.V2TIM_ELEM_TYPE_IMAGE:
