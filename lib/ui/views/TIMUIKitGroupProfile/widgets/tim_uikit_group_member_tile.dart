@@ -4,6 +4,7 @@ import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:tencent_cloud_chat_uikit/base_widgets/tim_ui_kit_base.dart';
+import 'package:tencent_cloud_chat_uikit/base_widgets/tim_ui_kit_state.dart';
 import 'package:tencent_cloud_chat_uikit/base_widgets/tim_ui_kit_statelesswidget.dart';
 import 'package:tencent_cloud_chat_uikit/business_logic/separate_models/tui_group_profile_model.dart';
 import 'package:tencent_cloud_chat_uikit/data_services/core/tim_uikit_wide_modal_operation_key.dart';
@@ -15,10 +16,14 @@ import 'package:tencent_cloud_chat_uikit/ui/widgets/avatar.dart';
 import 'package:tencent_cloud_chat_uikit/ui/widgets/wide_popup.dart';
 import 'package:tencent_im_base/tencent_im_base.dart';
 
-class GroupMemberTile extends TIMUIKitStatelessWidget {
-  GroupMemberTile({
-    Key? key,
-  }) : super(key: key);
+class GroupMemberTile extends StatefulWidget {
+  GroupMemberTile({Key? key, }) : super(key: key);
+
+  @override
+  State<StatefulWidget> createState() => _GroupMemberTileState();
+}
+
+class _GroupMemberTileState extends TIMUIKitState<GroupMemberTile> {
 
   List<V2TimGroupMemberFullInfo?> _getMemberList(memberList, int showRange) {
     if (memberList.length > showRange) {
@@ -94,13 +99,25 @@ class GroupMemberTile extends TIMUIKitStatelessWidget {
           ));
     } else {
       final option1 = memberList.length.toString();
+      List<V2TimGroupMemberFullInfo?> list = [];
+      List<V2TimFriendInfo> friends = model.contactList;
+      memberList.forEach((item) {
+        List<V2TimFriendInfo> temps =  friends.where((element) => element.userID == (item?.userID ?? "")).toList();
+        if (temps.length > 0) {
+          V2TimFriendInfo friend = temps.first;
+          item?.friendRemark = friend.friendRemark;
+        }
+        list.add(item);
+
+      });
+
       TUIKitWidePopup.showPopupWindow(
           operationKey: TUIKitWideModalOperationKey.groupMembersList,
           context: context,
           width: MediaQuery.of(context).size.width * 0.5,
           height: MediaQuery.of(context).size.height * 0.8,
           title: TIM_t_para("群成员({{option1}}人)", "群成员($option1人)")(option1: option1),
-          child: (onClose) => GroupProfileMemberListPage(model: model, memberList: memberList));
+          child: (onClose) => GroupProfileMemberListPage(model: model, memberList: list));
     }
   }
 
@@ -208,19 +225,25 @@ class GroupMemberTile extends TIMUIKitStatelessWidget {
                           onPressed: () {
                             if (isDesktopScreen) {
                               TUIKitWidePopup.showPopupWindow(
-                                  context: context,
-                                  operationKey: TUIKitWideModalOperationKey.addGroupMembers,
-                                  width: 350,
-                                  title: TIM_t("添加群成员"),
-                                  height: 460,
-                                  onSubmit: () {
-                                    addGroupMemberKey.currentState?.submitAdd();
+                                context: context,
+                                operationKey:
+                                TUIKitWideModalOperationKey.addGroupMembers,
+                                width: 350,
+                                title: TIM_t("添加群成员") + "(0/20)",
+                                height: 460,
+                                onSubmit: () {
+                                  addGroupMemberKey.currentState?.submitAdd();
+                                },
+                                child: (onClose) => AddGroupMemberPage(
+                                  model: model,
+                                  onClose: onClose,
+                                  key: addGroupMemberKey,
+                                  countBlock: (count) {
+                                    //发送通知
+                                    MemberCommunicationManager().sendCommunication(TIM_t("添加群成员") + "($count/20)");
                                   },
-                                  child: (onClose) => AddGroupMemberPage(
-                                        model: model,
-                                        onClose: onClose,
-                                        key: addGroupMemberKey,
-                                      ));
+                                ),
+                              );
                             } else {
                               Navigator.push(
                                   context,
@@ -250,12 +273,19 @@ class GroupMemberTile extends TIMUIKitStatelessWidget {
                         child: IconButton(
                           onPressed: () {
                             if (isDesktopScreen) {
+                              // TUIKitWidePopup.showPopupWindow(
+                              //     operationKey: TUIKitWideModalOperationKey.groupMembersList,
+                              //     context: context,
+                              //     width: MediaQuery.of(context).size.width * 0.5,
+                              //     height: MediaQuery.of(context).size.height * 0.8,
+                              //     title: TIM_t_para("群成员({{option1}}人)", "群成员($option1人)")(option1: option1),
+                              //     child: (onClose) => GroupProfileMemberListPage(model: model, memberList: memberList));
                               TUIKitWidePopup.showPopupWindow(
                                 operationKey: TUIKitWideModalOperationKey.kickOffGroupMembers,
                                 context: context,
-                                width: 350,
+                                width: MediaQuery.of(context).size.width * 0.5,
                                 title: TIM_t("删除群成员"),
-                                height: 460,
+                                height:  MediaQuery.of(context).size.height * 0.8,
                                 onSubmit: () {
                                   deleteGroupMemberKey.currentState?.submitDelete();
                                 },

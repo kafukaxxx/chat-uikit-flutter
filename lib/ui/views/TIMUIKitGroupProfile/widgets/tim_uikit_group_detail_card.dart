@@ -1,17 +1,20 @@
 import 'dart:math';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
 import 'package:tencent_cloud_chat_uikit/base_widgets/tim_ui_kit_statelesswidget.dart';
 import 'package:tencent_cloud_chat_uikit/business_logic/separate_models/tui_group_profile_model.dart';
 import 'package:tencent_cloud_chat_uikit/ui/utils/screen_utils.dart';
 import 'package:tencent_cloud_chat_uikit/ui/widgets/text_input_bottom_sheet.dart';
-
+import 'dart:io';
 import 'package:tencent_im_base/tencent_im_base.dart';
 import 'package:tencent_cloud_chat_uikit/ui/widgets/avatar.dart';
 
 import 'package:tencent_cloud_chat_uikit/base_widgets/tim_ui_kit_base.dart';
+import 'package:wb_flutter_tool/wb_flutter_tool.dart';
 
 class GroupProfileDetailCard extends TIMUIKitStatelessWidget {
   final V2TimGroupInfo groupInfo;
@@ -192,14 +195,31 @@ class GroupProfileDetailCard extends TIMUIKitStatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            SizedBox(
-              width: isDesktopScreen ? 40 : 48,
-              height: isDesktopScreen ? 40 : 48,
-              child: Avatar(
-                faceUrl: faceUrl,
-                showName: showName,
-                type: 2,
+            GestureDetector(
+              child: SizedBox(
+                width: isDesktopScreen ? 40 : 48,
+                height: isDesktopScreen ? 40 : 48,
+                child: Avatar(
+                  faceUrl: faceUrl,
+                  showName: showName,
+                  type: 2,
+                ),
               ),
+              onTap: () async{
+                if (isHavePermission) {
+                  FilePickerResult? result = await FilePicker.platform
+                      .pickFiles(type: FileType.image);
+                  if (result != null && result.files.isNotEmpty) {
+                    File file = File(result!.files.single.path!);
+
+                    var resp = await WBsyncHttpRequest()
+                        .upload(url: WBApi.uploadImage, file: file);
+                    if (resp.code == 200) {
+                      model.setGroupAvatar(resp.data["url"]);
+                    }
+                  }
+                }
+              },
             ),
             Expanded(
               child: Container(

@@ -8,6 +8,7 @@ import 'package:tencent_cloud_chat_uikit/base_widgets/tim_ui_kit_statelesswidget
 import 'package:tencent_cloud_chat_uikit/data_services/core/core_services_implements.dart';
 import 'package:tencent_cloud_chat_uikit/data_services/services_locatar.dart';
 import 'package:tencent_cloud_chat_uikit/base_widgets/tim_ui_kit_base.dart';
+import 'package:wb_flutter_tool/wb_flutter_tool.dart';
 
 class Avatar extends TIMUIKitStatelessWidget {
   final String faceUrl;
@@ -66,7 +67,7 @@ class Avatar extends TIMUIKitStatelessWidget {
         );
       }
       return CachedNetworkImage(
-        imageUrl: faceUrl,
+        imageUrl: faceUrl.appendImgUrl(),
         fadeInDuration: const Duration(milliseconds: 0),
         errorWidget: (BuildContext context, String c, dynamic s) {
           return defaultAvatar();
@@ -111,7 +112,7 @@ class Avatar extends TIMUIKitStatelessWidget {
         return Image.asset(faceUrl).image;
       }
       return CachedNetworkImageProvider(
-        faceUrl,
+        faceUrl.appendImgUrl(),
       );
     } else {
       return defaultAvatar();

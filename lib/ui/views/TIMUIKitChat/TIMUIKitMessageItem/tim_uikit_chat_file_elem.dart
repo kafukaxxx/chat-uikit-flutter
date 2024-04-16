@@ -21,6 +21,9 @@ import 'package:tencent_cloud_chat_uikit/ui/views/TIMUIKitChat/TIMUIKitMessageIt
 import 'package:tencent_cloud_chat_uikit/ui/widgets/textSize.dart';
 import 'package:universal_html/html.dart' as html;
 import 'package:url_launcher/url_launcher.dart';
+import 'package:wb_flutter_tool/im_tool/wb_ext_file_path.dart';
+import 'package:wb_flutter_tool/wb_flutter_tool.dart' hide PlatformUtils;
+import 'package:get_storage/get_storage.dart';
 
 class TIMUIKitFileElem extends StatefulWidget {
   final String? messageID;
@@ -95,6 +98,24 @@ class _TIMUIKitFileElemState extends TIMUIKitState<TIMUIKitFileElem> {
       },
     );
     TencentImSDKPlugin.v2TIMManager.getMessageManager().addAdvancedMsgListener(listener: advancedMsgListener);
+    dggAsyncDownloadFile();
+  }
+  dggAsyncDownloadFile() async {
+    if (await hasFile()) {
+      if (downloadProgress == 100) {
+        print("该文件已下完:${filePath}");
+      } else {
+        print("该文件正在下载:${widget.messageID}");
+      }
+      return;
+    }
+    if (checkIsWaiting()) {
+      print("current file is waiting:${widget.messageID}");
+    } else {
+
+      await addUrlToWaitingPath(CommonColor.defaultTheme);
+      print("current file add waiting:${widget.messageID}");
+    }
   }
 
   Future<String> getSavePath() async {
@@ -106,7 +127,26 @@ class _TIMUIKitFileElemState extends TIMUIKitState<TIMUIKitFileElem> {
     if (PlatformUtils().isWeb) {
       return true;
     }
+
     String savePath = TencentUtils.checkString(model.getFileMessageLocation(widget.messageID)) ?? TencentUtils.checkString(widget.message.fileElem!.localUrl) ?? widget.message.fileElem?.path ?? '';
+    print("local file url:${widget.message.fileElem!.localUrl}, path:${widget.message.fileElem?.path}, savedPath:${savePath}");
+    if (WBManager().downloadPath == "") {
+      if (savePath.contains("im_flutter_uikit_full_platform")) {
+        var downloadPath = savePath.split("download").first;
+        if (downloadPath.isNotEmpty) {
+          WBManager().downloadPath = downloadPath + "/download/";
+          GetStorage().write("wbdownloadPath", WBManager().downloadPath);
+        }
+      }
+
+
+    }
+    if (savePath == "") {
+      if (WBManager().downloadPath.isNotEmpty) {
+        print("空的id :${widget.message.fileElem?.UUID}");
+        savePath = WBManager().downloadPath + (widget.message.fileElem?.UUID ?? "");
+      }
+    }
     File f = File(savePath);
     if (f.existsSync() && widget.messageID != null) {
       filePath = savePath;
@@ -217,10 +257,11 @@ class _TIMUIKitFileElemState extends TIMUIKitState<TIMUIKitFileElem> {
     }
 
     try {
+      var savedPath = await filePath.decryptPath();
       if (PlatformUtils().isDesktop && !PlatformUtils().isWindows) {
-        launchUrl(Uri.file(filePath));
+        launchUrl(Uri.file(savedPath));
       } else {
-        OpenFile.open(filePath);
+        OpenFile.open(savedPath);
       }
       // ignore: empty_catches
     } catch (e) {

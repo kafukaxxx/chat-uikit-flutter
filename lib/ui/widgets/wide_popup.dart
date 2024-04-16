@@ -1,5 +1,6 @@
 // ignore_for_file: unused_import
 
+import 'dart:async';
 import 'dart:io';
 
 import 'package:chewie_for_us/chewie_for_us.dart';
@@ -12,6 +13,64 @@ import 'package:tencent_cloud_chat_uikit/ui/utils/platform.dart';
 import 'package:tencent_cloud_chat_uikit/ui/widgets/drag_widget.dart';
 import 'package:path/path.dart' as p;
 import 'package:video_player/video_player.dart';
+
+import 'package:flutter/material.dart';
+
+class MemberCommunicationManager {
+  static final MemberCommunicationManager _instance = MemberCommunicationManager._internal();
+
+  factory MemberCommunicationManager() {
+    return _instance;
+  }
+
+  MemberCommunicationManager._internal();
+
+  StreamController<String> _communicationStreamController = StreamController<String>.broadcast();
+
+  Stream<String> get communicationStream => _communicationStreamController.stream;
+
+  void sendCommunication(String value) {
+    _communicationStreamController.sink.add(value);
+  }
+
+  void dispose() {
+    _communicationStreamController.close();
+  }
+}
+
+
+class MemberTitleWidget extends StatefulWidget {
+
+  String title;
+  MemberTitleWidget ({super.key,required this.title,});
+
+  @override
+  _MemberTitleWidgetState createState() => _MemberTitleWidgetState();
+}
+
+class _MemberTitleWidgetState extends State<MemberTitleWidget > {
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    MemberCommunicationManager().communicationStream.listen((event) {
+      setState(() {
+        widget.title = event;
+      });
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      widget.title,
+      style: TextStyle(
+          fontSize: 18,
+          color: const Color(0xFF444444)),
+    );
+  }
+}
 
 class TUIKitWidePopup {
   static OverlayEntry? entry;
@@ -34,17 +93,17 @@ class TUIKitWidePopup {
         width: 350,
         height: 120,
         child: (onClose) => Container(
-              padding: const EdgeInsets.only(left: 16, right: 16),
-              child: Row(
-                children: [
-                  Icon(Icons.info, color: theme.primaryColor),
-                  const SizedBox(
-                    width: 8,
-                  ),
-                  Expanded(child: Text(text))
-                ],
+          padding: const EdgeInsets.only(left: 16, right: 16),
+          child: Row(
+            children: [
+              Icon(Icons.info, color: theme.primaryColor),
+              const SizedBox(
+                width: 8,
               ),
-            ));
+              Expanded(child: Text(text))
+            ],
+          ),
+        ));
   }
 
   static showPopupWindow({
@@ -71,7 +130,7 @@ class TUIKitWidePopup {
     isShow = true;
 
     final TUISelfInfoViewModel selfInfoViewModel =
-        serviceLocator<TUISelfInfoViewModel>();
+    serviceLocator<TUISelfInfoViewModel>();
 
     if (selfInfoViewModel.globalConfig?.showDesktopModalFunc != null) {
       final res = await selfInfoViewModel.globalConfig!.showDesktopModalFunc!(
@@ -98,29 +157,29 @@ class TUIKitWidePopup {
 
     final isUseMaterialAlert = (offset == null);
 
-    final Widget contentWidget = Container(
+    Widget contentWidget = Container(
       width: width,
       height: height,
       decoration: BoxDecoration(
         borderRadius:
-            borderRadius ?? const BorderRadius.all(Radius.circular(16)),
+        borderRadius ?? const BorderRadius.all(Radius.circular(16)),
         color: theme?.wideBackgroundColor ?? const Color(0xFFffffff),
         border: isDarkBackground
             ? Border.all(
-                width: 2,
-                color: theme?.weakBackgroundColor ?? const Color(0xFFbebebe),
-              )
+          width: 2,
+          color: theme?.weakBackgroundColor ?? const Color(0xFFbebebe),
+        )
             : null,
         boxShadow: (isDarkBackground || isUseMaterialAlert)
             ? null
             : const [
-                BoxShadow(
-                  color: Color(0xFFbebebe),
-                  offset: Offset(3, 3),
-                  blurRadius: 10,
-                  spreadRadius: 1,
-                ),
-              ],
+          BoxShadow(
+            color: Color(0xFFbebebe),
+            offset: Offset(3, 3),
+            blurRadius: 10,
+            spreadRadius: 1,
+          ),
+        ],
       ),
       child: Column(
         children: [
@@ -137,12 +196,13 @@ class TUIKitWidePopup {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 mainAxisSize: MainAxisSize.max,
                 children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                        fontSize: 18,
-                        color: theme?.darkTextColor ?? const Color(0xFF444444)),
-                  ),
+                  MemberTitleWidget(title: title,),
+                  // Text(
+                  //   title,
+                  //   style: TextStyle(
+                  //       fontSize: 18,
+                  //       color: theme?.darkTextColor ?? const Color(0xFF444444)),
+                  // ),
                   InkWell(
                     onTap: () {
                       if (onSubmit != null) {
@@ -294,7 +354,7 @@ class TUIKitWidePopup {
     double? aspectRatio,
   }) async {
     assert((mediaLocalPath != null) || (mediaURL != null),
-        "At least one of mediaLocalPath or mediaURL must be provided.");
+    "At least one of mediaLocalPath or mediaURL must be provided.");
 
     String _removeQueryString(String urlString) {
       Uri uri = Uri.parse(urlString);
@@ -313,7 +373,7 @@ class TUIKitWidePopup {
     String fileExtension = p
         .extension(isLocalResource ? mediaPath : _removeQueryString(mediaPath));
     bool isVideo =
-        ['.mp4', '.avi', '.mov', '.flv', '.wmv'].contains(fileExtension);
+    ['.mp4', '.avi', '.mov', '.flv', '.wmv'].contains(fileExtension);
 
     VideoPlayerController? videoController;
     ChewieController? chewieController;

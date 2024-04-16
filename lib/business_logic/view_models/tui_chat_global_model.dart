@@ -19,6 +19,8 @@ import 'package:tencent_cloud_chat_uikit/ui/utils/logger.dart';
 import 'package:tencent_cloud_chat_uikit/ui/utils/message.dart';
 import 'package:tencent_cloud_chat_uikit/ui/utils/platform.dart';
 
+import '../../ui/controller/tim_uikit_chat_controller.dart';
+
 enum ConvType { none, c2c, group }
 
 enum HistoryMessagePosition { bottom, inTwoScreen, awayTwoScreen, notShowLatest }
@@ -519,6 +521,28 @@ class TUIChatGlobalModel extends ChangeNotifier implements TIMUIKitClass {
     _checkFromUserisActive(msgComing);
     final convID = TencentUtils.checkString(newMsg.userID) ?? newMsg.groupID;
     final convType = TencentUtils.checkString(newMsg.groupID) != null ? ConvType.group : ConvType.c2c;
+    if (convType == ConvType.group) {
+      if (msgComing.elemType == MessageElemType.V2TIM_ELEM_TYPE_CUSTOM &&
+          msgComing.customElem?.data != null) {
+        print("coming customdata: ${msgComing.customElem?.data}");
+        try {
+          final customMessage = jsonDecode(msgComing.customElem!.data!);
+          print("coming custommessage: ${customMessage}");
+          String businessID = customMessage["businessID"];
+          if (businessID == null) {
+
+          }
+          if (businessID == "dgg_clearGroupMsg") {
+            print("收到了清屏消息了group:${convID}");
+            TencentImSDKPlugin.v2TIMManager.getMessageManager().clearGroupHistoryMessage(groupID: convID!);
+            TIMUIKitChatController().clearHistory(convID ?? "");
+          }
+        }catch (error) {
+          print("custom data json error:${error}");
+
+        }
+      }
+    }
     if (convID != null && convID == currentSelectedConv) {
       final position = getMessageListPosition(convID);
       if (position == HistoryMessagePosition.notShowLatest) {

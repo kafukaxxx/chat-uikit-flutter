@@ -14,7 +14,13 @@ import 'package:tencent_cloud_chat_uikit/ui/views/TIMUIKitGroupProfile/widgets/t
 import 'package:tencent_cloud_chat_uikit/ui/views/TIMUIKitGroupProfile/widgets/tim_uikit_group_button_area.dart';
 import 'package:tencent_cloud_chat_uikit/ui/views/TIMUIKitGroupProfile/widgets/tim_uikit_group_manage.dart';
 import 'package:tencent_cloud_chat_uikit/ui/views/TIMUIKitGroupProfile/widgets/tim_uikit_group_notification.dart';
+import 'package:wb_flutter_tool/popup/jw_popup.dart';
 export 'package:tencent_cloud_chat_uikit/ui/widgets/transimit_group_owner_select.dart';
+import 'package:wb_flutter_tool/wb_flutter_tool.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
+
+import '../../controller/tim_uikit_chat_controller.dart';
+import '../TIMUIKitConversation/dgg_transfer_conversation_list.dart';
 
 typedef GroupProfileBuilder = Widget Function(BuildContext context,
     V2TimGroupInfo groupInfo, List<V2TimGroupMemberFullInfo?> groupMemberList);
@@ -81,7 +87,7 @@ class _TIMUIKitGroupProfileState extends TIMUIKitState<TIMUIKitGroupProfile> {
   final model = TUIGroupProfileModel();
   final TUIGroupListenerModel groupListenerModel =
       serviceLocator<TUIGroupListenerModel>();
-
+  List<V2TimConversation?> _selConvs = [];
   @override
   void initState() {
     super.initState();
@@ -110,6 +116,7 @@ class _TIMUIKitGroupProfileState extends TIMUIKitState<TIMUIKitGroupProfile> {
     GroupProfileWidgetEnum.searchMessage,
     GroupProfileWidgetEnum.operationDivider,
     GroupProfileWidgetEnum.groupNotice,
+    GroupProfileWidgetEnum.customBuilderOne,
     GroupProfileWidgetEnum.groupManage,
     GroupProfileWidgetEnum.groupJoiningModeBar,
     GroupProfileWidgetEnum.groupTypeBar,
@@ -282,12 +289,128 @@ class _TIMUIKitGroupProfileState extends TIMUIKitState<TIMUIKitGroupProfile> {
                   return (customBuilder?.customBuilderOne != null
                       ? customBuilder?.customBuilderOne!(groupInfo, memberList)
                       // Please define the corresponding custom widget in `profileWidgetBuilder` before using it here.
-                      : Text(TIM_t("如使用自定义区域，请在profileWidgetBuilder传入对应组件")))!;
+                      : Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                        color: Colors.white,
+                        border: isDesktopScreen
+                            ? null
+                            : Border(
+                            bottom: BorderSide(
+                                color: theme.weakDividerColor ??
+                                    CommonColor.weakDividerColor))),
+                    child: Column(
+                      children: [
+                        InkWell(
+                          onTap: () async{
+                            showPopupWindow(context: context, offset: Offset(0, 0),emptyDismissable: true, windowBuilder: (context,from,to){
+                              return Center(
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(4),
+                                  child: Container(
+                                    width: MediaQuery.of(context).size.width*0.5,
+                                    height: MediaQuery.of(context).size.height*0.6,
+                                    color: Colors.white,
+                                    child: Stack(
+                                      children: [
+                                        Positioned(right: 0,child: TextButton(child: Text("转发"),onPressed: ()async{
+                                          if (_selConvs.length > 0) {
+                                            EasyLoading.show();
+                                            for (var conv in _selConvs) {
+                                              await sendGroupCardToConversation(conv!);
+                                            }
+                                            EasyLoading.dismiss();
+                                            Navigator.pop(context);
+                                          }
+                                        },)),
+                                        Positioned(left: 0,right: 0,bottom: 0,top: 50,child: DggTransferConversationList(onChanged: (convs) {
+                                          _selConvs = convs;
+                                        },))
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              );
+                            });
+
+
+                          },
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                TIM_t("分享群名片"),
+                                style: TextStyle(
+                                    fontSize: isDesktopScreen ? 14 : 16,
+                                    color: theme.darkTextColor),
+                              ),
+                              Icon(Icons.keyboard_arrow_right,
+                                  color: theme.weakTextColor)
+                            ],
+                          ),
+                        ),
+
+                      ],
+                    ),
+                  )
+                  )!;
                 case GroupProfileWidgetEnum.customBuilderTwo:
                   return (customBuilder?.customBuilderTwo != null
                       ? customBuilder?.customBuilderTwo!(groupInfo, memberList)
                       // Please define the corresponding custom widget in `profileWidgetBuilder` before using it here.
-                      : Text(TIM_t("如使用自定义区域，请在profileWidgetBuilder传入对应组件")))!;
+                      : Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                        color: Colors.white,
+                        border: isDesktopScreen
+                            ? null
+                            : Border(
+                            bottom: BorderSide(
+                                color: theme.weakDividerColor ??
+                                    CommonColor.weakDividerColor))),
+                    child: Column(
+                      children: [
+                        InkWell(
+                          onTap: () async{
+                            showCustomAlert(context: context,title: "提示",content: "清屏后消息不可恢复",enterStr: "清屏",cancelStr: "取消",enterCall: ()async{
+                              var dic = '{"businessID":"dgg_clearGroupMsg","group_id":"${model.groupID}"}';
+                              V2TimValueCallback<V2TimMsgCreateInfoResult> createCustomMessageRes = await TencentImSDKPlugin.v2TIMManager.getMessageManager().createCustomMessage(
+                                data: dic,
+
+                              );
+                              if(createCustomMessageRes.code == 0){
+                                String? id =  createCustomMessageRes.data?.id;
+                                // 发送自定义消息
+                                V2TimValueCallback<V2TimMessage> sendMessageRes = await TencentImSDKPlugin.v2TIMManager.getMessageManager().sendMessage(id: id!, receiver: "", groupID: model.groupID);
+                                if(sendMessageRes.code == 0){
+                                  // 发送成功,清理自己本地
+                                  TencentImSDKPlugin.v2TIMManager.getMessageManager().clearGroupHistoryMessage(groupID: model.groupID ?? "");
+                                  TIMUIKitChatController().clearHistory(model.groupID ?? "");
+                                  Navigator.of(context).pop();
+                                }
+                              }
+                            });
+
+                          },
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                TIM_t("清屏"),
+                                style: TextStyle(
+                                    fontSize: isDesktopScreen ? 14 : 16,
+                                    color: theme.darkTextColor),
+                              ),
+                              Icon(Icons.keyboard_arrow_right,
+                                  color: theme.weakTextColor)
+                            ],
+                          ),
+                        ),
+
+                      ],
+                    ),
+                  )
+                  )!;
                 case GroupProfileWidgetEnum.customBuilderThree:
                   return (customBuilder?.customBuilderThree != null
                       ? customBuilder?.customBuilderThree!(
@@ -329,5 +452,23 @@ class _TIMUIKitGroupProfileState extends TIMUIKitState<TIMUIKitGroupProfile> {
             ));
           }
         });
+  }
+  Future<bool> sendGroupCardToConversation(V2TimConversation conv) async{
+    var dic = '{"businessID":"dgg_group_businessId","groupID":"${model.groupID}","groupName":"${model.groupInfo?.groupName}"}';
+    V2TimValueCallback<V2TimMsgCreateInfoResult> createCustomMessageRes = await TencentImSDKPlugin.v2TIMManager.getMessageManager().createCustomMessage(
+      data: dic,
+
+    );
+    if(createCustomMessageRes.code == 0){
+      String? id =  createCustomMessageRes.data?.id;
+      // 发送自定义消息
+
+      V2TimValueCallback<V2TimMessage> sendMessageRes = await TencentImSDKPlugin.v2TIMManager.getMessageManager().sendMessage(id: id!, receiver: conv.userID ?? "", groupID: conv.groupID ?? "");
+      if(sendMessageRes.code == 0){
+        // 发送成功
+        return true;
+      }
+    }
+    return false;
   }
 }

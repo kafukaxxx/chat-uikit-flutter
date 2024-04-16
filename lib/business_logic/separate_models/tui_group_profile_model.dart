@@ -190,7 +190,24 @@ class TUIGroupProfileModel extends ChangeNotifier {
     }
     return null;
   }
-
+  Future<V2TimCallback?> setGroupAvatar(String avatar) async {
+    if (_groupInfo != null) {
+      String? originalAvatar = _groupInfo?.faceUrl;
+      _groupInfo?.faceUrl = avatar;
+      final response = await _groupServices.setGroupInfo(
+          info: V2TimGroupInfo.fromJson({
+            "groupID": _groupID,
+            "groupType": _groupInfo!.groupType,
+            "faceUrl": avatar
+          }));
+      if (response.code != 0) {
+        _groupInfo?.faceUrl = originalAvatar;
+      }
+      notifyListeners();
+      return response;
+    }
+    return null;
+  }
   Future<V2TimCallback?> setGroupAddOpt(int addOpt) async {
     if (_groupInfo != null) {
       int? originalAddopt = _groupInfo?.groupAddOpt;
@@ -235,7 +252,7 @@ class TUIGroupProfileModel extends ChangeNotifier {
 
   bool canInviteMember() {
     final groupType = _groupInfo?.groupType;
-    return groupType == GroupType.Work || groupType == "Private";
+    return groupType == GroupType.Public || groupType == "Private";
   }
 
   bool canKickOffMember() {

@@ -7,6 +7,7 @@ import 'package:collection/collection.dart';
 import 'package:flutter/cupertino.dart';
 // ignore: unnecessary_import
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:tencent_cloud_chat_uikit/business_logic/life_cycle/chat_life_cycle.dart';
@@ -22,6 +23,8 @@ import 'package:tencent_cloud_chat_uikit/ui/constants/history_message_constant.d
 import 'package:tencent_cloud_chat_uikit/ui/utils/logger.dart';
 import 'package:tencent_cloud_chat_uikit/ui/utils/platform.dart';
 import 'package:uuid/uuid.dart';
+import 'package:wb_flutter_tool/popup/jw_popup.dart';
+import 'package:wb_flutter_tool/wb_flutter_tool.dart' hide PlatformUtils;
 
 enum LoadDirection { previous, latest }
 
@@ -47,6 +50,7 @@ class TUIChatSeparateViewModel extends ChangeNotifier {
   List<V2TimMessage> _multiSelectedMessageList = [];
   V2TimMessage? _repliedMessage;
   String _jumpMsgID = "";
+  int? serverTime;
   bool _isGroupExist = true;
   bool _isNotAMember = false;
   bool showC2cMessageEditStatus = true;
@@ -85,6 +89,64 @@ class TUIChatSeparateViewModel extends ChangeNotifier {
   set showAtMemberList(List<V2TimGroupMemberFullInfo?> value) {
     _showAtMemberList = value;
     notifyListeners();
+  }
+  onRightClickUser(String userID, TapDownDetails tapDetails,BuildContext context) {
+    print("groupInfo:${groupInfo},userlist：${groupMemberList}");
+
+    var mo = groupMemberList?.where((element) => element?.userID == userID).toList();
+
+    var isMute = (serverTime != null
+        ? (mo?.first?.muteUntil ?? 0) > serverTime!
+        : false);
+
+    if (selfMemberInfo?.role == GroupMemberRoleType.V2TIM_GROUP_MEMBER_ROLE_ADMIN || selfMemberInfo?.role == GroupMemberRoleType.V2TIM_GROUP_MEMBER_ROLE_OWNER) {
+      showPopupWindow(context: context,emptyDismissable: true, offset: Offset(tapDetails.localPosition.dx + 20, tapDetails.localPosition.dy-20), windowBuilder: (context,from,to){
+        return Container(
+          width: 80,
+
+          decoration: BoxDecoration(borderRadius: BorderRadius.circular(10),
+              color: Colors.white),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+
+            children: [
+              TextButton(child: Text(isMute ?"解除禁言":"禁言",style: TextStyle(color: text3Color)),onPressed: ()async{
+                V2TimCallback result = await TencentImSDKPlugin.v2TIMManager
+                    .getGroupManager().muteGroupMember(groupID: groupInfo?.groupID ?? "", userID: userID, seconds: isMute ? 0: 365*24*3600);
+                if (result.code == 0) {
+                  final targetIndex =
+                  groupMemberList!.indexWhere((e) => e!.userID == userID);
+
+
+                  WBToastUtil.showToastCenter(isMute ? "解除成功":"禁言成功");
+                  if (targetIndex != -1) {
+                    isMute = !isMute;
+                    final targetElem = groupMemberList![targetIndex];
+                    targetElem?.muteUntil = isMute ? (serverTime ?? 0) + 365*24*10 : 0;
+                    groupMemberList![targetIndex] = targetElem;
+                  }
+                  notifyListeners();
+                  Navigator.pop(context);
+                }else {
+                  WBToastUtil.showToastCenter(result.desc);
+                }
+              },),
+              Divider(height: 0.5,),
+              TextButton(child: Text("踢出群组",style: TextStyle(color: text3Color),),onPressed: () async{
+                V2TimCallback result = await TencentImSDKPlugin.v2TIMManager
+                    .getGroupManager().kickGroupMember(groupID: groupInfo?.groupID ?? "", memberList: [userID]);
+                if (result.code == 0) {
+                  WBToastUtil.showToastCenter("踢出成功");
+                  Navigator.pop(context);
+                }else {
+                  WBToastUtil.showToastCenter(result.desc);
+                }
+              },)
+            ],
+          ),
+        );
+      });
+    }
   }
 
   V2TimGroupInfo? get groupInfo => _groupInfo;
@@ -224,6 +286,7 @@ class TUIChatSeparateViewModel extends ChangeNotifier {
       notifyListeners();
       Future.delayed(const Duration(milliseconds: 10), () async {
         globalModel.refreshGroupApplicationList();
+        getServerTime();
         loadGroupInfo(groupID ?? convID);
         if (preGroupMemberList != null) {
           groupMemberList = preGroupMemberList;
@@ -506,7 +569,12 @@ class TUIChatSeparateViewModel extends ChangeNotifier {
       return "";
     }
   }
+  void getServerTime() async {
+    final res = await TencentImSDKPlugin.v2TIMManager.getServerTime();
 
+    serverTime = res.data;
+
+  }
   Future<(V2TimGroupInfo?, GroupReceiptAllowType?)> loadGroupInfo(String groupID) async {
     final groupInfoList = await _groupServices.getGroupsInfo(groupIDList: [groupID]);
     if (groupInfoList != null && groupInfoList.isNotEmpty) {
@@ -1182,6 +1250,14 @@ class TUIChatSeparateViewModel extends ChangeNotifier {
   }
 
   addToMultiSelectedMessageList(V2TimMessage message) {
+    if (message.customElem?.data != null) {
+      final customMessage = jsonDecode(message.customElem!.data!);
+      String businessID = customMessage["businessID"];
+      if (businessID == "red_packet" || businessID == "transfer_c2c") {
+        WBToastUtil.showToastCenter("红包及转账类型不支持多选");
+        return;
+      }
+    }
     _multiSelectedMessageList.add(message);
     notifyListeners();
   }
