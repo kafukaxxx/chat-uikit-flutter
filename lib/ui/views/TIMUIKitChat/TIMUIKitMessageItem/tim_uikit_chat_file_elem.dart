@@ -134,18 +134,24 @@ class _TIMUIKitFileElemState extends TIMUIKitState<TIMUIKitFileElem> {
       return true;
     }
     V2TimValueCallback<V2TimMessageOnlineUrl> imgdata = await TencentImSDKPlugin.v2TIMManager.getMessageManager().getMessageOnlineUrl(msgID: widget.messageID!);
-    setState(() {
       if (mounted) {
-        imgUrl = imgdata.data?.fileElem?.url ?? "";
+        setState(() {
+          imgUrl = imgdata.data?.fileElem?.url ?? "";
+        });
+
       }
-    });
+
     String savePath = TencentUtils.checkString(model.getFileMessageLocation(widget.messageID)) ?? TencentUtils.checkString(widget.message.fileElem!.localUrl) ?? widget.message.fileElem?.path ?? '';
     print("local file url:${widget.message.fileElem!.localUrl}, path:${widget.message.fileElem?.path}, savedPath:${savePath}");
+    if (savePath.contains("tencent/uploads/")) {
+      savePath = savePath.replaceAll("tencent/uploads/", "temp_tencent\\uploads\\").replaceAll("/", "\\");
+      print("changed path:${savePath}");
+    }
     if (WBManager().downloadPath == "") {
       if (savePath.contains("TencentCloudChat")) {
-        var downloadPath = savePath.split("download").first;
+        var downloadPath = savePath.split("\\").first;
         if (downloadPath.isNotEmpty) {
-          WBManager().downloadPath = downloadPath + "/download/";
+          WBManager().downloadPath = downloadPath + "\\";
           GetStorage().write("wbdownloadPath", WBManager().downloadPath);
         }
       }
@@ -162,13 +168,18 @@ class _TIMUIKitFileElemState extends TIMUIKitState<TIMUIKitFileElem> {
     if (f.existsSync() && widget.messageID != null) {
       filePath = savePath;
       var tmpstr = await filePath.decryptPath();
-      setState(() {
-        decryptLocalPath = tmpstr;
-      });
-      if (downloadProgress != 100) {
+      if (mounted) {
         setState(() {
-          downloadProgress = 100;
+          decryptLocalPath = tmpstr;
         });
+      }
+
+      if (downloadProgress != 100) {
+        if (mounted) {
+          setState(() {
+            downloadProgress = 100;
+          });
+        }
       }
       if (model.getMessageProgress(widget.messageID) != 100) {
         model.setMessageProgress(widget.messageID!, 100);
@@ -368,9 +379,15 @@ class _TIMUIKitFileElemState extends TIMUIKitState<TIMUIKitFileElem> {
                     }
                     return;
                   }
+                  if (imgUrl.isNotEmpty) {
+                    var opfile = await DefaultCacheManager().getSingleFile(
+                        imgUrl);
+                    var pp = await opfile.path.decryptPath();
+                    OpenFile.open(pp);
+                  }
                   if (await hasFile()) {
                     if (received == 100) {
-                      tryOpenFile(context, theme);
+                      // tryOpenFile(context, theme);
                     } else {
                       onTIMCallback(
                         TIMCallback(

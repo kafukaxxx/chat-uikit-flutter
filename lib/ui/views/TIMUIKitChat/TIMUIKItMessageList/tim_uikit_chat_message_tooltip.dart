@@ -39,6 +39,7 @@ import '../../../../customMessages/DggTransferModel.dart';
 import '../../../../customMessages/DggUserBusineIdModel.dart';
 
 
+
 class TIMUIKitMessageTooltip extends StatefulWidget {
   /// tool tips panel configuration, long press message will show tool tips panel
   final ToolTipsConfig? toolTipsConfig;

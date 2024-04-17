@@ -28,18 +28,18 @@ import 'package:wb_flutter_tool/wb_flutter_tool.dart' hide PlatformUtils;
 enum MuteStatus { none, me, all }
 
 typedef CustomStickerPanel = Widget Function({
-  void Function() sendTextMessage,
-  void Function(int index, String data) sendFaceMessage,
-  void Function() deleteText,
-  void Function(int unicode) addText,
-  void Function(String singleEmojiName) addCustomEmojiText,
-  List<CustomEmojiFaceData> defaultCustomEmojiStickerList,
+void Function() sendTextMessage,
+void Function(int index, String data) sendFaceMessage,
+void Function() deleteText,
+void Function(int unicode) addText,
+void Function(String singleEmojiName) addCustomEmojiText,
+List<CustomEmojiFaceData> defaultCustomEmojiStickerList,
 
-  /// If non-null, requires the child to have exactly this width.
-  double? width,
+/// If non-null, requires the child to have exactly this width.
+double? width,
 
-  /// If non-null, requires the child to have exactly this height.
-  double? height,
+/// If non-null, requires the child to have exactly this height.
+double? height,
 });
 
 class TIMUIKitInputTextField extends StatefulWidget {
@@ -103,27 +103,27 @@ class TIMUIKitInputTextField extends StatefulWidget {
 
   const TIMUIKitInputTextField(
       {Key? key,
-      required this.conversationID,
-      required this.conversationType,
-      this.initText,
-      this.hintText,
-      this.scrollController,
-      this.morePanelConfig,
-      this.customStickerPanel,
-      this.showSendAudio = true,
-      this.showSendEmoji = true,
-      this.showMorePanel = true,
-      this.backgroundColor,
-      this.controller,
-      this.onChanged,
-      this.isUseDefaultEmoji = false,
-      this.customEmojiStickerList = const [],
-      required this.model,
-      required this.currentConversation,
-      this.groupType,
-      this.atMemberPanelScroll,
-      this.groupID,
-      this.chatConfig})
+        required this.conversationID,
+        required this.conversationType,
+        this.initText,
+        this.hintText,
+        this.scrollController,
+        this.morePanelConfig,
+        this.customStickerPanel,
+        this.showSendAudio = true,
+        this.showSendEmoji = true,
+        this.showMorePanel = true,
+        this.backgroundColor,
+        this.controller,
+        this.onChanged,
+        this.isUseDefaultEmoji = false,
+        this.customEmojiStickerList = const [],
+        required this.model,
+        required this.currentConversation,
+        this.groupType,
+        this.atMemberPanelScroll,
+        this.groupID,
+        this.chatConfig})
       : super(key: key);
 
   @override
@@ -150,6 +150,7 @@ class _InputTextFieldState extends TIMUIKitState<TIMUIKitInputTextField> {
   int latestSendEditStatusTime = DateTime.now().millisecondsSinceEpoch;
   List<CustomStickerPackage> stickerPackageList = [];
 
+
   generateStickerList() {
     if (widget.customStickerPanel != null) {
       // Keep using original scheme.
@@ -157,37 +158,49 @@ class _InputTextFieldState extends TIMUIKitState<TIMUIKitInputTextField> {
     }
     final stickerConfig = widget.model.chatConfig.stickerPanelConfig ?? StickerPanelConfig();
     if (stickerConfig.useTencentCloudChatStickerPackage) {
-      final tccEmojiSet = TUIKitStickerConstData.emojiList.firstWhere((element) => element.name == "tcc1");
-      stickerPackageList.add(CustomStickerPackage(
-          name: tccEmojiSet.name,
-          baseUrl: "assets/custom_face_resource/${tccEmojiSet.name}",
-          isEmoji: tccEmojiSet.isEmoji,
-          isDefaultEmoji: true,
-          stickerList: tccEmojiSet.list.asMap().keys.map((idx) => CustomSticker(index: idx, name: tccEmojiSet.list[idx])).toList(),
-          menuItem: CustomSticker(
-            index: 0,
-            name: tccEmojiSet.icon,
-          )));
+      // final tccEmojiSet = TUIKitStickerConstData.emojiList.firstWhere((element) => element.name == "tcc1");
+      // stickerPackageList.add(CustomStickerPackage(
+      //     name: tccEmojiSet.name,
+      //     baseUrl: "assets/custom_face_resource/${tccEmojiSet.name}",
+      //     isEmoji: tccEmojiSet.isEmoji,
+      //     isDefaultEmoji: true,
+      //     stickerList: tccEmojiSet.list.asMap().keys.map((idx) => CustomSticker(index: idx, name: tccEmojiSet.list[idx])).toList(),
+      //     menuItem: CustomSticker(
+      //       index: 0,
+      //       name: tccEmojiSet.icon,
+      //     )));
     }
     if (stickerConfig.useQQStickerPackage) {
-      final qqEmojiSet = TUIKitStickerConstData.emojiList.firstWhere((element) => element.name == "4349");
-      stickerPackageList.add(CustomStickerPackage(
-          name: qqEmojiSet.name,
-          baseUrl: "assets/custom_face_resource/${qqEmojiSet.name}",
-          isEmoji: qqEmojiSet.isEmoji,
-          isDefaultEmoji: true,
-          stickerList: qqEmojiSet.list.asMap().keys.map((idx) => CustomSticker(index: idx, name: qqEmojiSet.list[idx])).toList(),
-          menuItem: CustomSticker(
-            index: 0,
-            name: qqEmojiSet.icon,
-          )));
+      // final qqEmojiSet = TUIKitStickerConstData.emojiList.firstWhere((element) => element.name == "4349");
+      // stickerPackageList.add(CustomStickerPackage(
+      //     name: qqEmojiSet.name,
+      //     baseUrl: "assets/custom_face_resource/${qqEmojiSet.name}",
+      //     isEmoji: qqEmojiSet.isEmoji,
+      //     isDefaultEmoji: true,
+      //     stickerList: qqEmojiSet.list.asMap().keys.map((idx) => CustomSticker(index: idx, name: qqEmojiSet.list[idx])).toList(),
+      //     menuItem: CustomSticker(
+      //       index: 0,
+      //       name: qqEmojiSet.icon,
+      //     )));
     }
-    if (stickerConfig.unicodeEmojiList.isNotEmpty) {
-      final defEmojiList = TUIKitStickerConstData.defaultUnicodeEmojiList.map((emojiItem) {
-        return CustomSticker(index: 0, name: emojiItem.toString(), unicode: emojiItem);
-      }).toList();
-      stickerPackageList.add(CustomStickerPackage(name: "defaultEmoji", stickerList: defEmojiList, menuItem: defEmojiList[0]));
-    }
+    final qqEmojiSet = TUIKitStickerConstData.emojiList.firstWhere((element) => element.name == "4399");
+    stickerPackageList.add(CustomStickerPackage(
+        name: qqEmojiSet.name,
+        baseUrl: "assets/custom_face_resource/${qqEmojiSet.name}",
+        isEmoji: qqEmojiSet.isEmoji,
+        isDefaultEmoji: false,
+        stickerList: qqEmojiSet.list.asMap().keys.map((idx) => CustomSticker(index: idx, name: qqEmojiSet.list[idx])).toList(),
+        menuItem: CustomSticker(
+          index: 0,
+          name: qqEmojiSet.icon,
+        )));
+    // if (stickerConfig.unicodeEmojiList.isNotEmpty) {
+    //   final defEmojiList = TUIKitStickerConstData.defaultUnicodeEmojiList.map((emojiItem) {
+    //
+    //     return CustomSticker(index: 0, name: emojiItem.toString(), unicode: emojiItem);
+    //   }).toList();
+    //   stickerPackageList.add(CustomStickerPackage(name: "defaultEmoji", stickerList: defEmojiList, menuItem: defEmojiList[0]));
+    // }
     stickerPackageList.addAll(stickerConfig.customStickerPackages);
 
     return stickerPackageList;
@@ -336,10 +349,13 @@ class _InputTextFieldState extends TIMUIKitState<TIMUIKitInputTextField> {
   onSubmitted() async {
     conversationModel.clearWebDraft(conversationID: widget.conversationID);
     lastText = "";
-    final convType = widget.conversationType;
+    if (textEditingController.text.trim().isEmpty) {
+      return;
+    }
     var dic = "{\"original\":\"${textEditingController.text.trim()}\"}";
     final text = AESTools.encryptString(dic);
     print("encrypt str :${text}");
+    final convType = widget.conversationType;
     if (text.isNotEmpty && text != zeroWidthSpace) {
       if (widget.model.repliedMessage != null) {
         MessageUtils.handleMessageError(widget.model.sendReplyMessage(text: text, convID: widget.conversationID, convType: convType, atUserIDList: getUserIdFromMemberInfoMap()), context);
@@ -562,15 +578,15 @@ class _InputTextFieldState extends TIMUIKitState<TIMUIKitInputTextField> {
         }
         List<V2TimGroupMemberFullInfo> showAtMemberList = (model.groupMemberList ?? [])
             .where((element) {
-              final showName = (TencentUtils.checkStringWithoutSpace(element?.friendRemark) ??
-                      TencentUtils.checkStringWithoutSpace(element?.nameCard) ??
-                      TencentUtils.checkStringWithoutSpace(element?.nickName) ??
-                      TencentUtils.checkStringWithoutSpace(element?.userID) ??
-                      "")
-                  .toLowerCase();
-              keyword ??= "";
-              return element != null && showName.contains(keyword!.toLowerCase()) && TencentUtils.checkString(showName) != null && element.userID != widget.model.selfMemberInfo?.userID;
-            })
+          final showName = (TencentUtils.checkStringWithoutSpace(element?.friendRemark) ??
+              TencentUtils.checkStringWithoutSpace(element?.nameCard) ??
+              TencentUtils.checkStringWithoutSpace(element?.nickName) ??
+              TencentUtils.checkStringWithoutSpace(element?.userID) ??
+              "")
+              .toLowerCase();
+          keyword ??= "";
+          return element != null && showName.contains(keyword!.toLowerCase()) && TencentUtils.checkString(showName) != null && element.userID != widget.model.selfMemberInfo?.userID;
+        })
             .whereType<V2TimGroupMemberFullInfo>()
             .toList();
 
@@ -597,7 +613,7 @@ class _InputTextFieldState extends TIMUIKitState<TIMUIKitInputTextField> {
 
         keyword ??= "";
         if (canAtAll && showAtMemberList.isNotEmpty && keyword!.isEmpty) {
-          showAtMemberList = [V2TimGroupMemberFullInfo(userID: "__kImSDK_MesssageAtALL__", nickName: TIM_t("所有人")), ...showAtMemberList];
+          showAtMemberList = [V2TimGroupMemberFullInfo(userID: "__kImSDK_MessageAtALL__", nickName: TIM_t("所有人")), ...showAtMemberList];
         }
 
         model.activeAtIndex = 0;
@@ -790,6 +806,9 @@ class _InputTextFieldState extends TIMUIKitState<TIMUIKitInputTextField> {
     final int selfRole = widget.model.selfMemberInfo?.role ?? 0;
     final bool willNotBeenMuted = (selfRole == GroupMemberRoleType.V2TIM_GROUP_MEMBER_ROLE_ADMIN || selfRole == GroupMemberRoleType.V2TIM_GROUP_MEMBER_ROLE_OWNER);
 
+    if (widget.conversationType == ConvType.c2c) {
+      muteStatus = MuteStatus.none;
+    }
     if (widget.conversationType == ConvType.group && !willNotBeenMuted) {
       if ((model.groupInfo?.isAllMuted ?? false) && muteStatus != MuteStatus.all) {
         Future.delayed(const Duration(seconds: 0), () {
@@ -797,12 +816,17 @@ class _InputTextFieldState extends TIMUIKitState<TIMUIKitInputTextField> {
             muteStatus = MuteStatus.all;
           });
         });
+        return;
       } else if (selfModel.loginInfo?.userID != null && await getMemberMuteStatus(selfModel.loginInfo!.userID!) && muteStatus != MuteStatus.me) {
         Future.delayed(const Duration(seconds: 0), () {
           setState(() {
-            muteStatus = MuteStatus.me;
+            if (muteStatus != MuteStatus.all) {
+              muteStatus = MuteStatus.me;
+            }
+
           });
         });
+        return;
       } else if (!(model.groupInfo?.isAllMuted ?? false) && !(selfModel.loginInfo?.userID != null && await getMemberMuteStatus(selfModel.loginInfo!.userID!)) && muteStatus != MuteStatus.none) {
         Future.delayed(const Duration(seconds: 0), () {
           setState(() {
@@ -843,9 +867,10 @@ class _InputTextFieldState extends TIMUIKitState<TIMUIKitInputTextField> {
               return "群组不存在";
             } else if (model.isNotAMember) {
               return "您不是群成员";
-            } else if (muteStatus == MuteStatus.all) {
-              return "全员禁言中";
-            } else if (muteStatus == MuteStatus.me) {
+            } else if (muteStatus == MuteStatus.all || muteStatus == MuteStatus.me) {
+              if  (muteStatus == MuteStatus.all) {
+                return "全员禁言中";
+              }
               return "您被禁言";
             }
             return null;
@@ -932,4 +957,25 @@ class _InputTextFieldState extends TIMUIKitState<TIMUIKitInputTextField> {
         }),
         selector: (c, model) => model.repliedMessage);
   }
+  List<String> tmdCus = ["微笑.png","色.png","发呆.png","酷拽.png","抠鼻.png","流泪.png","捂脸.png","发怒.png"
+    ,"呲牙.png","尬笑.png","害羞.png","调皮.png","舔屏.png","看.png","爱心.png","比心.png","赞.png","鼓掌.png","感谢.png",
+    "抱抱你.png","玫瑰.png","灵机一动.png","耶.png","打脸.png","大笑.png","机智.png","送心.png","666.png","闭嘴.png","来看我.png",
+    "一起加油.png","哈欠.png","震惊.png","晕.png","衰.png","困.png","疑问.png","泣不成声.png","小鼓掌.png","大金牙.png","偷笑.png",
+    "石化.png","思考.png","吐血.png","可怜.png","嘘.png","撇嘴.png","笑哭.png","奸笑.png","得意.png","憨笑.png","坏笑.png","抓狂.png",
+    "泪奔.png","钱.png","恐惧.png","愉快.png","快哭了.png","翻白眼.png","互粉.png","我想静静.png","委屈.png","鄙视.png","飞吻.png",
+    "再见.png","紫薇别走.png","听歌.png","求抱抱.png","绝望的凝视.png","不失礼貌的微笑.png","不看.png","裂开.png","干饭人.png","吐舌.png",
+    "呆无辜.png","白眼.png","熊吉.png","猪头.png","冷漠.png","微笑袋鼠.png","凝视.png","暗中观察.png","二哈.png","菜狗.png","黑脸.png","展开说说.png",
+    "蜜蜂狗.png","摸头.png","皱眉.png","擦汗.png","红脸.png","做鬼脸.png","强.png","如花.png","吐.png","惊喜.png","敲打.png","奋斗.png","吐彩虹.png",
+    "大哭.png","嘿哈.png","加好友.png","惊恐.png","惊讶.png","囧.png","难过.png","斜眼.png","阴险.png","悠闲.png","咒骂.png","吃瓜群众.png",
+    "绿帽子.png","真的会谢.png","达咩.png","敢怒不敢言.png","投降.png","求求了.png","眼含热泪.png","叹气.png","好开心.png","不是吧.png","动动脑子.png",
+    "表面微笑.png","表面呲牙.png","鞠躬.png","躺平.png","九转大肠.png","敲木鱼.png","不你不想.png","一头乱麻.png","kisskiss.png","你不大行.png",
+    "噢买尬.png","宕机.png","还得是我.png","6.png","脸疼.png","他急了.png","苦涩.png","逞强落泪.png","强壮.png","碰拳.png","OK.png","击掌.png",
+    "左上.png","握手.png","抱拳.png","勾引.png","拳头.png","弱.png","胜利.png","右边.png","左边.png","亚运鼓掌.png","金牌.png","手花.png","嘴唇.png",
+    "心碎.png","凋谢.png","啤酒.png","咖啡.png","蛋糕.png","礼物.png","撒花.png","加一.png","减一.png","okk.png","V5.png","绝.png",
+    "给力.png","红包.png","屎.png","发.png","我太难了.png","18禁.png","炸弹.png","去污粉.png","西瓜.png","加鸡腿.png","我酸了.png","握爪.png",
+    "太阳.png","月亮.png","给跪了.png","蕉绿.png","扎心.png","胡瓜.png","yyds.png","emo.png","开心兔.png","招财兔.png","年兽兔.png",
+    "打call.png","栓Q.png","无语.png","雪人.png","雪花.png","圣诞树.png","平安果.png","圣诞帽.png","气球.png","干杯.png","烟花.png","福.png",
+    "candy.png","糖葫芦.png","虎头.png","饺子.png","鞭炮.png","元宝.png","灯笼.png","锦鲤.png","巧克力.png","汤圆.png","情书.png","iloveyou.png",
+    "戒指.png","小黄鸭.png","棒棒糖.png","纸飞机.png","必胜.png","粽子.png"];
+
 }

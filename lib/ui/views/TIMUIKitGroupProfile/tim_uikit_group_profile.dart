@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:provider/provider.dart';
@@ -19,7 +21,9 @@ export 'package:tencent_cloud_chat_uikit/ui/widgets/transimit_group_owner_select
 import 'package:wb_flutter_tool/wb_flutter_tool.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 
+import '../../../data_services/core/tim_uikit_wide_modal_operation_key.dart';
 import '../../controller/tim_uikit_chat_controller.dart';
+import '../../widgets/wide_popup.dart';
 import '../TIMUIKitConversation/dgg_transfer_conversation_list.dart';
 
 typedef GroupProfileBuilder = Widget Function(BuildContext context,
@@ -355,7 +359,9 @@ class _TIMUIKitGroupProfileState extends TIMUIKitState<TIMUIKitGroupProfile> {
                   )
                   )!;
                 case GroupProfileWidgetEnum.customBuilderTwo:
-                  return (customBuilder?.customBuilderTwo != null
+                  if (!isGroupOwner && !isAdmin) {
+                    return Container();
+                  }                  return (customBuilder?.customBuilderTwo != null
                       ? customBuilder?.customBuilderTwo!(groupInfo, memberList)
                       // Please define the corresponding custom widget in `profileWidgetBuilder` before using it here.
                       : Container(
@@ -412,11 +418,76 @@ class _TIMUIKitGroupProfileState extends TIMUIKitState<TIMUIKitGroupProfile> {
                   )
                   )!;
                 case GroupProfileWidgetEnum.customBuilderThree:
-                  return (customBuilder?.customBuilderThree != null
+                  if (!isGroupOwner && !isAdmin) {
+                    return Container();
+                  }                  return (customBuilder?.customBuilderThree != null
                       ? customBuilder?.customBuilderThree!(
                           groupInfo, memberList)
                       // Please define the corresponding custom widget in `profileWidgetBuilder` before using it here.
-                      : Text(TIM_t("如使用自定义区域，请在profileWidgetBuilder传入对应组件")))!;
+                      : Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                        color: Colors.white,
+                        border: isDesktopScreen
+                            ? null
+                            : Border(
+                            bottom: BorderSide(
+                                color: theme.weakDividerColor ??
+                                    CommonColor.weakDividerColor))),
+                    child: Column(
+                      children: [
+                        InkWell(
+                          onTapDown: (details) async{
+                            if(isDesktopScreen){
+                              TUIKitWidePopup.showPopupWindow(
+                                  operationKey: TUIKitWideModalOperationKey.groupAddOpt,
+                                  isDarkBackground: false,
+                                  borderRadius: const BorderRadius.all(Radius.circular(4)),
+                                  context: context,
+                                  offset: Offset(min(details.globalPosition.dx,
+                                      MediaQuery.of(context).size.width - 186), details.globalPosition.dy),
+                                  child: (onClose) => TUIKitColumnMenu(
+                                    data: [
+                                      ...[
+                                        {"label": TIM_t("管理员审批"), "id": "0"},
+                                        {"label": TIM_t("自动审批"), "id": "1"},
+                                        {"label": TIM_t("禁止邀请"), "id": "2"}]
+                                          .map((e){
+                                        return ColumnMenuItem(label: e["label"] as String, onClick: ()async{
+                                          var resp = await WBsyncHttpRequest().post(WBApi.setGroupInfo,data: {"team_id":model.groupID,"beinvitemode":e["id"]});
+                                          if (resp.code == 200) {
+                                            setState(() {
+                                              model.beinvitemode = e["id"];
+                                            });
+                                          }
+                                          onClose();
+                                        });
+                                      }),
+                                    ],
+                                  )
+                              );
+                            }
+                          },
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                TIM_t("邀请入群方式"),
+                                style: TextStyle(
+                                    fontSize: isDesktopScreen ? 14 : 16,
+                                    color: theme.darkTextColor),
+                              ),
+                              Spacer(),
+                              Text(["管理员审批","自动审批","禁止邀请"][int.parse(model.beinvitemode ?? "2")] ),
+                              Icon(Icons.keyboard_arrow_right,
+                                  color: theme.weakTextColor)
+                            ],
+                          ),
+                        ),
+
+                      ],
+                    ),
+                  ) )!;
                 case GroupProfileWidgetEnum.customBuilderFour:
                   return (customBuilder?.customBuilderFour != null
                       ? customBuilder?.customBuilderFour!(groupInfo, memberList)

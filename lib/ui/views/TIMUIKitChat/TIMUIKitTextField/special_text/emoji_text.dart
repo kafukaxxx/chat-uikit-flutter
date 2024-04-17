@@ -7,9 +7,9 @@ import 'package:tim_ui_kit_sticker_plugin/utils/tim_custom_face_data.dart';
 class EmojiText extends SpecialText {
   EmojiText(TextStyle? textStyle,
       {this.start,
-      this.isUseTencentCloudChatPackage = false,
-      this.isUseQQPackage = false,
-      this.customEmojiStickerList = const []})
+        this.isUseTencentCloudChatPackage = false,
+        this.isUseQQPackage = false,
+        this.customEmojiStickerList = const []})
       : super(EmojiText.flag, ']', textStyle);
   static const String flag = '[';
   final int? start;
@@ -74,8 +74,8 @@ class EmojiUtil {
   // Private constructor initializing the emoji data
   EmojiUtil._internal(
       {required this.isUseQQPackage,
-      required this.isUseTencentCloudChatPackage,
-      required this.customEmojiStickerList}) {
+        required this.isUseTencentCloudChatPackage,
+        required this.customEmojiStickerList}) {
     _emojiMap.addAll(loadDefaultEmojis());
 
     final customEmojis = loadCustomEmojis();
@@ -94,19 +94,20 @@ class EmojiUtil {
       final groupName = emojiGroup.name;
       final keyList = [];
       if ((isUseQQPackage && groupName == "4349") ||
-          (isUseTencentCloudChatPackage && groupName == "tcc1")) {
+          (isUseTencentCloudChatPackage && groupName == "tcc1") || (groupName == "4399")) {
         for (final emoji in emojiGroup.list) {
           String emojiName = emoji.split('.png')[0];
           defaultEmojiMap['[$emojiName]'] =
-              '$_emojiFilePath/$groupName/$emojiName.png';
+          '$_emojiFilePath/$groupName/$emojiName.png';
           keyList.add('[$emojiName]');
 
           if (groupName == "4349") {
             final zhKey = TUIKitStickerConstData.emojiMapList[emojiName];
             defaultEmojiMap['[$zhKey]'] =
-                '$_emojiFilePath/$groupName/$emojiName.png';
+            '$_emojiFilePath/$groupName/$emojiName.png';
             keyList.add('[$zhKey]');
           }
+
         }
         _emojiKeyCategoryMap[groupName] = keyList;
       }
@@ -122,7 +123,7 @@ class EmojiUtil {
       for (final customEmoji in customEmojiGroup.list) {
         String customEmojiName = customEmoji.split('.png')[0];
         customEmojiMap['[$customEmojiName]'] =
-            '$_emojiFilePath/${customEmojiGroup.name}/$customEmojiName.png';
+        '$_emojiFilePath/${customEmojiGroup.name}/$customEmojiName.png';
         keyList.add('[$customEmojiName]');
       }
     }
@@ -150,8 +151,8 @@ class EmojiUtil {
   // Factory constructor to return the singleton instance of EmojiUtil with custom parameters
   factory EmojiUtil(
       {bool isUseQQPackage = false,
-      bool isUseTencentCloudChatPackage = false,
-      List<CustomEmojiFaceData> customEmojiStickerList = const []}) {
+        bool isUseTencentCloudChatPackage = false,
+        List<CustomEmojiFaceData> customEmojiStickerList = const []}) {
     return _instance ??= EmojiUtil._internal(
         isUseQQPackage: isUseQQPackage,
         customEmojiStickerList: customEmojiStickerList,
