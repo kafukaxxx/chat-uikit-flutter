@@ -25,6 +25,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "6.0.0"
+  ansicolor:
+    dependency: transitive
+    description:
+      name: ansicolor
+      sha256: "8bf17a8ff6ea17499e40a2d2542c2f481cd7615760c6d34065cb22bfd22e6880"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.0.2"
   archive:
     dependency: transitive
     description:
@@ -1003,6 +1011,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.0"
+  mixin_logger:
+    dependency: "direct main"
+    description:
+      name: mixin_logger
+      sha256: e3f9f8952044aa5ba4de0c56d2746b6d6940a7223384f3c4d9b1fa85f37e6183
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.1.1"
   nested:
     dependency: transitive
     description:
@@ -1492,10 +1508,10 @@ packages:
     dependency: transitive
     description:
       name: tencent_cloud_chat_sdk
-      sha256: a78f1f20dc9ebe40aee1bbb47da097780028434d77e97774fbe733debb21e18e
+      sha256: "358e79b51aba5457418d3bb87e0bbd0f088a1eaf4c4463d09bdda93d1d655aa3"
       url: "https://pub.dev"
     source: hosted
-    version: "7.7.5296"
+    version: "7.9.5672"
   tencent_cloud_uikit_core:
     dependency: "direct main"
     description:

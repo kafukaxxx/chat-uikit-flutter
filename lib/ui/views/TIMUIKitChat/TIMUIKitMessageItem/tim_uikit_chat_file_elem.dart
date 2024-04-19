@@ -76,9 +76,12 @@ class _TIMUIKitFileElemState extends TIMUIKitState<TIMUIKitFileElem> {
       onMessageDownloadProgressCallback: (V2TimMessageDownloadProgress messageProgress) async {
         if (messageProgress.msgID == widget.message.msgID) {
           if (messageProgress.isError || messageProgress.errorCode != 0) {
-            setState(() {
-              _downloadFailed = true;
-            });
+            if (mounted) {
+              setState(() {
+                _downloadFailed = true;
+              });
+            }
+
             return;
           }
 
@@ -95,9 +98,9 @@ class _TIMUIKitFileElemState extends TIMUIKitState<TIMUIKitFileElem> {
           } else {
             final currentProgress = (messageProgress.currentSize / messageProgress.totalSize * 100).floor();
             if (mounted && currentProgress > downloadProgress) {
-              setState(() {
+              // setState(() {
                 downloadProgress = currentProgress;
-              });
+              // });
             }
           }
         }
@@ -297,9 +300,9 @@ class _TIMUIKitFileElemState extends TIMUIKitState<TIMUIKitFileElem> {
 
   void downloadWebFile(String fileUrl) async {
     if (mounted) {
-      setState(() {
-        isWebDownloading = true;
-      });
+      // setState(() {
+      //   isWebDownloading = true;
+      // });
     }
     String fileName = Uri.parse(fileUrl).pathSegments.last;
     try {
@@ -355,66 +358,111 @@ class _TIMUIKitFileElemState extends TIMUIKitState<TIMUIKitFileElem> {
       key: containerKey,
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (widget.isSelf && isWebDownloading)
-          Container(
-            margin: const EdgeInsets.only(top: 2),
-            child: LoadingAnimationWidget.threeArchedCircle(
-              color: theme.weakTextColor ?? Colors.grey,
-              size: 20,
-            ),
-          ),
-        TIMUIKitMessageReactionWrapper(
-            chatModel: widget.chatModel,
-            isShowJump: widget.isShowJump,
-            clearJump: widget.clearJump,
-            isFromSelf: widget.message.isSelf ?? true,
-            isShowMessageReaction: widget.isShowMessageReaction ?? true,
-            message: widget.message,
-            child: GestureDetector(
-              onTap: () async {
-                try {
-                  if (PlatformUtils().isWeb) {
-                    if (!isWebDownloading) {
-                      downloadWebFile(widget.fileElem?.path ?? "");
-                    }
-                    return;
-                  }
-                  if (imgUrl.isNotEmpty) {
-                    var opfile = await DefaultCacheManager().getSingleFile(
-                        imgUrl);
-                    var pp = await opfile.path.decryptPath();
-                    OpenFile.open(pp);
-                  }
-                  if (await hasFile()) {
-                    if (received == 100) {
-                      // tryOpenFile(context, theme);
-                    } else {
-                      onTIMCallback(
-                        TIMCallback(
-                          type: TIMCallbackType.INFO,
-                          infoRecommendText: TIM_t("正在下载中"),
-                          infoCode: 6660411,
-                        ),
-                      );
-                    }
-                    return;
-                  }
-                  if (checkIsWaiting()) {
-                    onTIMCallback(
-                      TIMCallback(type: TIMCallbackType.INFO, infoRecommendText: TIM_t("已加入待下载队列，其他文件下载中"), infoCode: 6660413),
-                    );
-                    return;
-                  } else {
-                    await addUrlToWaitingPath(theme);
-                  }
-                } catch (e) {
-                  onTIMCallback(TIMCallback(type: TIMCallbackType.INFO, infoRecommendText: "文件处理异常", infoCode: 6660416));
+        // if (widget.isSelf && isWebDownloading)
+        //   Container(
+        //     margin: const EdgeInsets.only(top: 2),
+        //     child: LoadingAnimationWidget.threeArchedCircle(
+        //       color: theme.weakTextColor ?? Colors.grey,
+        //       size: 20,
+        //     ),
+        //   ),
+        GestureDetector(
+          onTap: () async {
+            try {
+              if (PlatformUtils().isWeb) {
+                if (!isWebDownloading) {
+                  downloadWebFile(widget.fileElem?.path ?? "");
                 }
-              },
-              child:imgUrl.isEmpty ? Text("处理中.....") : (decryptLocalPath.isEmpty ?  _renderCacheImage(url: imgUrl) : Container(
-                child: Image.file(File(decryptLocalPath),width: 200,),
-              )),
-            )),
+                return;
+              }
+              if (imgUrl.isNotEmpty) {
+                var opfile = await DefaultCacheManager().getSingleFile(
+                    imgUrl);
+                var pp = await opfile.path.decryptPath();
+                OpenFile.open(pp);
+              }
+              if (await hasFile()) {
+                if (received == 100) {
+                  // tryOpenFile(context, theme);
+                } else {
+                  onTIMCallback(
+                    TIMCallback(
+                      type: TIMCallbackType.INFO,
+                      infoRecommendText: TIM_t("正在下载中"),
+                      infoCode: 6660411,
+                    ),
+                  );
+                }
+                return;
+              }
+              if (checkIsWaiting()) {
+                onTIMCallback(
+                  TIMCallback(type: TIMCallbackType.INFO, infoRecommendText: TIM_t("已加入待下载队列，其他文件下载中"), infoCode: 6660413),
+                );
+                return;
+              } else {
+                await addUrlToWaitingPath(theme);
+              }
+            } catch (e) {
+              onTIMCallback(TIMCallback(type: TIMCallbackType.INFO, infoRecommendText: "文件处理异常", infoCode: 6660416));
+            }
+          },
+          child:(decryptLocalPath.isEmpty ? (imgUrl.isEmpty ? Text("处理中.....") :  _renderCacheImage(url: imgUrl)) : Container(
+            child: Image.file(File(decryptLocalPath),width: 200,),
+          )),
+        ),
+        // TIMUIKitMessageReactionWrapper(
+        //     chatModel: widget.chatModel,
+        //     isShowJump: widget.isShowJump,
+        //     clearJump: widget.clearJump,
+        //     isFromSelf: widget.message.isSelf ?? true,
+        //     isShowMessageReaction: widget.isShowMessageReaction ?? true,
+        //     message: widget.message,
+        //     child: GestureDetector(
+        //       onTap: () async {
+        //         try {
+        //           if (PlatformUtils().isWeb) {
+        //             if (!isWebDownloading) {
+        //               downloadWebFile(widget.fileElem?.path ?? "");
+        //             }
+        //             return;
+        //           }
+        //           if (imgUrl.isNotEmpty) {
+        //             var opfile = await DefaultCacheManager().getSingleFile(
+        //                 imgUrl);
+        //             var pp = await opfile.path.decryptPath();
+        //             OpenFile.open(pp);
+        //           }
+        //           if (await hasFile()) {
+        //             if (received == 100) {
+        //               // tryOpenFile(context, theme);
+        //             } else {
+        //               onTIMCallback(
+        //                 TIMCallback(
+        //                   type: TIMCallbackType.INFO,
+        //                   infoRecommendText: TIM_t("正在下载中"),
+        //                   infoCode: 6660411,
+        //                 ),
+        //               );
+        //             }
+        //             return;
+        //           }
+        //           if (checkIsWaiting()) {
+        //             onTIMCallback(
+        //               TIMCallback(type: TIMCallbackType.INFO, infoRecommendText: TIM_t("已加入待下载队列，其他文件下载中"), infoCode: 6660413),
+        //             );
+        //             return;
+        //           } else {
+        //             await addUrlToWaitingPath(theme);
+        //           }
+        //         } catch (e) {
+        //           onTIMCallback(TIMCallback(type: TIMCallbackType.INFO, infoRecommendText: "文件处理异常", infoCode: 6660416));
+        //         }
+        //       },
+        //       child:imgUrl.isEmpty ? Text("处理中.....") : (decryptLocalPath.isEmpty ?  _renderCacheImage(url: imgUrl) : Container(
+        //         child: Image.file(File(decryptLocalPath),width: 200,),
+        //       )),
+        //     )),
         // if (!widget.isSelf && isWebDownloading)
         //   Container(
         //     margin: const EdgeInsets.only(top: 2),
@@ -431,6 +479,7 @@ class _TIMUIKitFileElemState extends TIMUIKitState<TIMUIKitFileElem> {
       width: 200,
       height: 200,
       color: Colors.grey,
+      alignment: Alignment.center,
       child: FutureBuilder(
         future: DefaultCacheManager().getSingleFile(url),
         builder: (context,snapshot) {

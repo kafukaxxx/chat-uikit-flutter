@@ -273,8 +273,8 @@ class _TIMUIKitProfileState extends TIMUIKitState<TIMUIKitProfile> {
             var res =
                 await WBsyncHttpRequest().post(WBApi.getConfig, showHud: true);
             if (res.code == 200) {
-              final isDeleteFriend = res.data['admin_delete_friend'].toString(); //1删除。 0不能删除
-              if (int.parse(isDeleteFriend) == 1) {
+              final isDeleteFriend = res.data['admin_delete_friend'].toString(); //0删除。 1不能删除
+              if (int.parse(isDeleteFriend) == 0) {
                 model.deleteFriend(userInfo.userID).then((res) {
                   if (res == null) {
                     throw Error();

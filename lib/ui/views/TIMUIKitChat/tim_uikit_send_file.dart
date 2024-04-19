@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math';
 import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
 import 'package:tencent_cloud_chat_uikit/base_widgets/tim_ui_kit_base.dart';
@@ -13,6 +14,7 @@ import 'package:tencent_cloud_chat_uikit/ui/utils/platform.dart';
 import 'package:tencent_cloud_chat_uikit/ui/widgets/wide_popup.dart';
 import 'package:path/path.dart' as path;
 import 'package:url_launcher/url_launcher.dart';
+import 'package:wb_flutter_tool/im_tool/wb_ext_file_path.dart';
 
 import 'TIMUIKitMessageItem/tim_uikit_chat_file_icon.dart';
 
@@ -167,13 +169,18 @@ Future<void> sendFiles(
   for (final file in files) {
     final fileName = file.name;
     final filePath = file.path;
-    await MessageUtils.handleMessageError(
-        model.sendFileMessage(
-            fileName: fileName,
-            filePath: filePath,
-            convID: _getConvID(conversation),
-            convType: conversationType),
-        context);
+    var fileformat = fileName.split(".")[max(filePath.split(".").length - 1, 0)];
+    var encryPath = await filePath.encrypyPath(fileformat);
+    if (encryPath.isNotEmpty) {
+      await MessageUtils.handleMessageError(
+          model.sendFileMessage(
+              fileName: fileName,
+              filePath: encryPath,
+              convID: _getConvID(conversation),
+              convType: conversationType),
+          context);
+    }
+
     await Future.delayed(const Duration(microseconds: 300));
   }
 }

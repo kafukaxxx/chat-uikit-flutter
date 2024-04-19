@@ -932,6 +932,9 @@ class _TIMUIKItHistoryMessageListItemState
   Widget _getMessageItemBuilder(V2TimMessage message, int? messageStatues,
       TUIChatSeparateViewModel model) {
     final messageBuilder = _messageItemBuilder;
+    if (!(message.isRead ?? false) && !(message.isSelf ?? false)) {
+      TencentImSDKPlugin.v2TIMManager.getMessageManager().sendMessageReadReceipts(messageIDList: [message.msgID!]);
+    }
 
     return messageBuilder(widget.message, model);
   }

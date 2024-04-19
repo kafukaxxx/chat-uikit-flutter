@@ -22,7 +22,7 @@ import 'package:tencent_cloud_chat_uikit/ui/utils/logger.dart';
 import 'package:tencent_cloud_chat_uikit/ui/utils/platform.dart';
 
 import '../../ui/controller/tim_uikit_chat_controller.dart';
-
+import 'package:mixin_logger/mixin_logger.dart';
 enum ConvType { none, c2c, group }
 
 enum HistoryMessagePosition {
@@ -110,8 +110,9 @@ class TUIChatGlobalModel extends ChangeNotifier implements TIMUIKitClass {
             serviceLocator<TUIConversationViewModel>();
             List<V2TimConversation?> convs = _conversationViewModel.conversationList;
             for (V2TimConversation? conv in convs) {
-              if (newMsg.userID == conv?.userID || newMsg.groupID == conv?.groupID) {
+              if (newMsg.userID == (conv?.userID ??"") || newMsg.groupID == (conv?.groupID ?? "")) {
                 if (conv?.recvOpt == 0) {
+                  print("允许通知得会话 userId:${newMsg.userID}, groupId:${newMsg.groupID},conv userId:${conv?.userID}, groupId:${conv?.groupID}");
                   _playWechatAudio();
                 }
               }
@@ -637,6 +638,7 @@ class TUIChatGlobalModel extends ChangeNotifier implements TIMUIKitClass {
     if (convID != null && convID == currentSelectedConv) {
       final position = getMessageListPosition(convID);
       if (position == HistoryMessagePosition.notShowLatest) {
+
         return;
       }
       if (position == HistoryMessagePosition.bottom && unreadCountForConversation == 0) {
@@ -832,7 +834,7 @@ class TUIChatGlobalModel extends ChangeNotifier implements TIMUIKitClass {
 
   void removeAdvanceMsgListener() {
     _messageService.removeAdvancedMsgListener(listener: advancedMsgListener);
-    advancedMsgListener = null;
+    // advancedMsgListener = null;
   }
 
   markMessageAsRead({

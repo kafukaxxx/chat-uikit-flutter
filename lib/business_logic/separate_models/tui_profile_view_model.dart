@@ -10,6 +10,7 @@ import 'package:tencent_cloud_chat_uikit/data_services/core/core_services_implem
 import 'package:tencent_cloud_chat_uikit/data_services/friendShip/friendship_services.dart';
 import 'package:tencent_cloud_chat_uikit/data_services/message/message_services.dart';
 import 'package:tencent_cloud_chat_uikit/data_services/services_locatar.dart';
+import 'package:mixin_logger/mixin_logger.dart';
 
 class TUIProfileViewModel extends ChangeNotifier {
   final ConversationService _conversationService =
@@ -58,12 +59,13 @@ class TUIProfileViewModel extends ChangeNotifier {
     }
     V2TimFriendInfo? friendUserInfo;
     V2TimConversation? conversation;
+    i("开始获取好友信息：${userID}");
     final userInfoList =
         await _friendshipServices.getFriendsInfo(userIDList: [userID]);
     final checkFriend = await _friendshipServices.checkFriend(
         userIDList: [userID],
         checkType: FriendTypeEnum.V2TIM_FRIEND_TYPE_SINGLE);
-
+    i("检测好友信息：${checkFriend?.first?.toJson().toString()}");
     if (checkFriend != null) {
       final res = checkFriend.first;
       if (res.resultCode == 0) {
@@ -83,11 +85,10 @@ class TUIProfileViewModel extends ChangeNotifier {
 
     final friendInfo =
         await _lifeCycle?.didGetFriendInfo(friendUserInfo) ?? friendUserInfo;
-
     _isDisturb = conversation?.recvOpt == 2;
     _userProfile =
         UserProfile(friendInfo: friendInfo, conversation: conversation);
-
+    i("获取到好友信息：${friendInfo},_userProfile:${_userProfile}",);
     _shouldAddToBlackList = _friendShipViewModel.blockList
             .indexWhere((element) => element.userID == userID) >
         -1;

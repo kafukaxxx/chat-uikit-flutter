@@ -70,10 +70,10 @@ class TUIGroupProfileModel extends ChangeNotifier {
     _groupID = groupID;
     EasyLoading.show();
     await loadGroupInfo(groupID);
-    dggLoadInfo();
-    await _loadContactList();
-    await loadGroupMemberList(groupID: groupID);
-    await _loadConversation();
+    await dggLoadInfo();
+     _loadContactList();
+     loadGroupMemberList(groupID: groupID);
+     _loadConversation();
     EasyLoading.dismiss();
   }
   dggLoadInfo() async {
