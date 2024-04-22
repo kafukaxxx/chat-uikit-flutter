@@ -76,20 +76,20 @@ class _TIMUIKitFileElemState extends TIMUIKitState<TIMUIKitFileElem> {
       onMessageDownloadProgressCallback: (V2TimMessageDownloadProgress messageProgress) async {
         if (messageProgress.msgID == widget.message.msgID) {
           if (messageProgress.isError || messageProgress.errorCode != 0) {
-            if (mounted) {
-              setState(() {
-                _downloadFailed = true;
-              });
-            }
+            // if (mounted) {
+            //   setState(() {
+            //     _downloadFailed = true;
+            //   });
+            // }
 
             return;
           }
 
           if (messageProgress.isFinish) {
             if (mounted) {
-              setState(() {
+              // setState(() {
                 downloadProgress = 100;
-              });
+              // });
 
               TencentImSDKPlugin.v2TIMManager.getMessageManager().removeAdvancedMsgListener(
                     listener: advancedMsgListener,
@@ -171,17 +171,17 @@ class _TIMUIKitFileElemState extends TIMUIKitState<TIMUIKitFileElem> {
     if (f.existsSync() && widget.messageID != null) {
       filePath = savePath;
       var tmpstr = await filePath.decryptPath();
-      if (mounted) {
-        setState(() {
+      // if (mounted) {
+        // setState(() {
           decryptLocalPath = tmpstr;
-        });
-      }
+        // });
+      // }
 
       if (downloadProgress != 100) {
         if (mounted) {
-          setState(() {
+          // setState(() {
             downloadProgress = 100;
-          });
+          // });
         }
       }
       if (model.getMessageProgress(widget.messageID) != 100) {

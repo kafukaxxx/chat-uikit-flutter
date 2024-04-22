@@ -29,6 +29,7 @@ import 'package:tencent_cloud_chat_uikit/ui/views/TIMUIKitChat/TIMUIKItMessageLi
 import 'package:tencent_cloud_chat_uikit/ui/widgets/forward_message_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:path/path.dart' as path;
+import 'package:wb_flutter_tool/im_tool/wb_ext_file_path.dart';
 import 'package:wb_flutter_tool/wb_flutter_tool.dart' hide PlatformUtils;
 
 import '../../../../customMessages/DGGCustomMsgBaseModel.dart';
@@ -37,7 +38,7 @@ import '../../../../customMessages/DggRedPacketModel.dart';
 import '../../../../customMessages/DggRedpacketTipsModel.dart';
 import '../../../../customMessages/DggTransferModel.dart';
 import '../../../../customMessages/DggUserBusineIdModel.dart';
-
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 
 
 class TIMUIKitMessageTooltip extends StatefulWidget {
@@ -250,7 +251,7 @@ class TIMUIKitMessageTooltipState
       //       id: "finder",
       //       iconImageAsset: "images/folder_open.png",
       //       onClick: () => _onTap("finder", model)),
-      if (messageCanCopy)
+      // if (messageCanCopy)
         MessageToolTipItem(
             label: TIM_t("复制"),
             id: "copyMessage",
@@ -582,26 +583,21 @@ class TIMUIKitMessageTooltipState
               "");
           copyImageToClipboard(savePath);
         }else if (widget.message.elemType == MessageElemType.V2TIM_ELEM_TYPE_FILE) {
-          String? fileFormat;
-          String? fileName;
-          if (widget.message.fileElem?.fileName != null &&
-              widget.message.fileElem!.fileName!.isNotEmpty) {
-            fileName = widget.message.fileElem!.fileName!;
-            fileFormat = filePath.split(".")[max(filePath.split(".").length - 1, 0)];
-          }
-          String lastdierName = filePath.split("/")[max(filePath.split("/").length - 1, 0)];
-          String saveDirec = filePath.replaceAll(lastdierName,"");
-          String saveNewName = lastdierName.replaceAll(".${fileFormat}", "_decrypt.${fileFormat}");
-          String savepath = saveDirec + saveNewName;
-          if (!File(savepath).existsSync()) {
-            var aescode = Uint8List.fromList( aesKey.codeUnits);
-            var file =  File(filePath).readAsBytesSync();
-            var imgfile = file.sublist(aescode.length,file.length);
-            print("file path:${filePath},file name:${fileName}");
+          String savepath = "";
+          if (filePath.isNotEmpty) {
+             savepath = await filePath.decryptPath();
+          }else {
+            EasyLoading.show();
+            V2TimValueCallback<V2TimMessageOnlineUrl> imgdata = await TencentImSDKPlugin.v2TIMManager.getMessageManager().getMessageOnlineUrl(msgID: widget.message.msgID!);
 
-            print("save path: ${savepath}");
-            File(savepath)..createSync(recursive: true)..writeAsBytesSync(imgfile);
+            var imgUrl = imgdata.data?.fileElem?.url ?? "";
+            var opfile = await DefaultCacheManager().getSingleFile(
+                imgUrl);
+            savepath = await opfile.path.decryptPath();
           }
+
+
+
           await copyImageToClipboard(savepath);
           await Pasteboard.image;
           EasyLoading.showToast('图片复制成功');
