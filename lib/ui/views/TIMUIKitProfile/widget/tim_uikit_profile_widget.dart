@@ -364,7 +364,7 @@ class TIMUIKitProfileWidget extends TIMUIKitClass {
               ))
           : ElevatedButton(
               onPressed: onPressed,
-              child: Text(text),
+              child: Text(text,style:const TextStyle(color: Colors.white),),
               style: ButtonStyle(
                   minimumSize:
                       MaterialStateProperty.all<Size>(const Size(180, 46)),

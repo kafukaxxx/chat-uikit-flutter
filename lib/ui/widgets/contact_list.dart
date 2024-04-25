@@ -31,6 +31,7 @@ class ContactList extends StatefulWidget {
   /// 顶部列表
   final List<TopListItem>? topList;
 
+
   /// 顶部列表项构造器
   final Widget? Function(TopListItem item)? topListItemBuilder;
 
@@ -370,7 +371,15 @@ class _ContactListState extends TIMUIKitState<ContactList> {
           ],
         )
         ),
-        Positioned(top: (widget.canSelectAll == true) ?115:65,left: 0,right: 0,bottom: 0,child: AZListViewContainer(
+        Positioned(top: (widget.canSelectAll == true) ?115:65,
+          child: Container(
+            height: 30,
+            color:theme.conversationItemChooseBgColor,
+            width: 280,
+            padding: EdgeInsets.only(left: 20),
+            child: Text("好友人数:${widget.contactList.length ?? 0}",style: const TextStyle(height: 2),),
+          ),),
+        Positioned(top: (widget.canSelectAll == true) ?145:95,left: 0,right: 0,bottom: 0,child: AZListViewContainer(
           memberList: searchResults,
           itemBuilder: (context, index) {
             final memberInfo = searchResults[index].memberInfo;
