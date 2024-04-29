@@ -17,7 +17,8 @@ import 'package:tencent_cloud_chat_uikit/ui/widgets/wide_popup.dart';
 import 'package:tencent_im_base/tencent_im_base.dart';
 
 class GroupMemberTile extends StatefulWidget {
-  GroupMemberTile({Key? key, }) : super(key: key);
+  final bool isHavePermission;
+  GroupMemberTile({Key? key,this.isHavePermission = false }) : super(key: key);
 
   @override
   State<StatefulWidget> createState() => _GroupMemberTileState();

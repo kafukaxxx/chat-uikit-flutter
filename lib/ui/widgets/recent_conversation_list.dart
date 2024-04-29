@@ -1,4 +1,6 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
 import 'package:tencent_cloud_chat_uikit/base_widgets/tim_ui_kit_state.dart';
 import 'package:tencent_cloud_chat_uikit/business_logic/view_models/tui_conversation_view_model.dart';
@@ -29,7 +31,9 @@ class RecentForwardList extends StatefulWidget {
 class _RecentForwardListState extends TIMUIKitState<RecentForwardList> {
   final TUIConversationViewModel _conversationViewModel =
       serviceLocator<TUIConversationViewModel>();
-  final List<V2TimConversation> _selectedConversation = [];
+  List<V2TimConversation> _selectedConversation = [];
+
+  List<V2TimConversation> cList = [];
 
   List<ISuspensionBeanImpl<V2TimConversation?>> _buildMemberList(
       List<V2TimConversation?> conversationList) {
@@ -37,9 +41,66 @@ class _RecentForwardListState extends TIMUIKitState<RecentForwardList> {
         List.empty(growable: true);
     for (var i = 0; i < conversationList.length; i++) {
       final item = conversationList[i];
+      cList.add(item ?? V2TimConversation(conversationID: ""));
       showList.add(ISuspensionBeanImpl(memberInfo: item, tagIndex: "#"));
     }
     return showList;
+  }
+ //全选
+  bool isAll = false;
+  Widget _selectAll() {
+    final recentConvList =
+        serviceLocator<TUIConversationViewModel>().conversationList;
+     cList = [];
+     _buildMemberList(recentConvList);
+    return Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+        Container(
+          child: CheckBoxButton(
+            isChecked: isAll,
+            onChanged: (value) {
+              if (value) {
+                _selectedConversation.addAll(cList);
+                isAll = true;
+              } else {
+                _selectedConversation = [];
+                isAll = false;
+
+              }
+              if (widget.onChanged != null) {
+                widget.onChanged!(_selectedConversation);
+              }
+              setState(() {});
+            },
+          ),
+        ),
+         Expanded(child: InkWell(
+           onTap: () {
+             if (isAll == false) {
+               _selectedConversation.addAll(cList);
+               isAll = true;
+             } else {
+               _selectedConversation = [];
+               isAll = false;
+             }
+             if (widget.onChanged != null) {
+               widget.onChanged!(_selectedConversation);
+             }
+             setState(() {});
+           },
+           child: Row(
+             children: [
+               SizedBox(width: 7,),
+               Container(
+                 // padding: const EdgeInsets.only(top: 10, left: 16),
+                 // height: isDesktopScreen ? 30 : 40,
+                   child:const Text("全选"))
+             ],
+           ),
+         ))
+    ]);
   }
 
   Widget _buildItem(V2TimConversation conversation) {
@@ -149,8 +210,16 @@ class _RecentForwardListState extends TIMUIKitState<RecentForwardList> {
         final showList = _buildMemberList(recentConvList);
         final isDesktopScreen =
             TUIKitScreenUtils.getFormFactor(context) == DeviceType.Desktop;
-
-        return AZListViewContainer(
+        return
+          Scaffold(
+            appBar: AppBar(
+            centerTitle: false,
+            title: _selectAll(),
+        automaticallyImplyLeading: false,
+        backgroundColor: const Color(0xFFebebeb),
+        leading: null,
+        ),
+        body: AZListViewContainer(
           memberList: showList,
           isShowIndexBar: false,
           susItemBuilder: (context, index) {
@@ -178,6 +247,7 @@ class _RecentForwardListState extends TIMUIKitState<RecentForwardList> {
               return Container();
             }
           },
+        )
         );
       },
     );

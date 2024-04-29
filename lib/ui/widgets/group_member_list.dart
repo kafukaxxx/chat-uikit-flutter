@@ -1,5 +1,7 @@
 // ignore_for_file: must_be_immutable
 
+import 'dart:async';
+
 import 'package:azlistview_all_platforms/azlistview_all_platforms.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
@@ -7,14 +9,16 @@ import 'package:lpinyin/lpinyin.dart';
 import 'package:provider/provider.dart';
 import 'package:tencent_cloud_chat_uikit/base_widgets/tim_ui_kit_base.dart';
 import 'package:tencent_cloud_chat_uikit/base_widgets/tim_ui_kit_state.dart';
+import 'package:tencent_cloud_chat_uikit/business_logic/separate_models/tui_group_profile_model.dart';
 import 'package:tencent_cloud_chat_uikit/ui/utils/optimize_utils.dart';
 import 'package:tencent_cloud_chat_uikit/ui/utils/screen_utils.dart';
 import 'package:tencent_cloud_chat_uikit/ui/widgets/avatar.dart';
 import 'package:tencent_cloud_chat_uikit/ui/widgets/az_list_view.dart';
 import 'package:tencent_cloud_chat_uikit/ui/widgets/radio_button.dart';
 import 'package:tencent_im_base/tencent_im_base.dart';
+import 'package:wb_flutter_tool/wb_flutter_tool.dart';
 
-class GroupProfileMemberList extends StatefulWidget {
+class GroupProfileMemberList extends StatefulWidget{
   final List<V2TimGroupMemberFullInfo?> memberList;
   final Function(String userID)? removeMember;
   final bool canSlideDelete;
@@ -52,8 +56,23 @@ class GroupProfileMemberList extends StatefulWidget {
   State<StatefulWidget> createState() => _GroupProfileMemberListState();
 }
 
-class _GroupProfileMemberListState extends TIMUIKitState<GroupProfileMemberList> {
+class _GroupProfileMemberListState extends TIMUIKitState<GroupProfileMemberList>  with ChangeNotifier {
   List<V2TimGroupMemberFullInfo> selectedMember = [];
+  // int? serverTime;
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    // getServerTime();
+  }
+
+  Future<int> getServerTime() async {
+    final res = await TencentImSDKPlugin.v2TIMManager.getServerTime();
+    // serverTime = res.data;
+    return res?.data ?? 0;
+    // print("serverTimeserverTime:$serverTime");
+  }
 
   _getShowName(V2TimGroupMemberFullInfo? item) {
     final friendRemark = item?.friendRemark ?? "";
@@ -100,10 +119,11 @@ class _GroupProfileMemberListState extends TIMUIKitState<GroupProfileMemberList>
     return showList;
   }
 
-  Widget _buildListItem(BuildContext context, V2TimGroupMemberFullInfo memberInfo) {
+  Widget _buildListItem(BuildContext context, V2TimGroupMemberFullInfo memberInfo,TUIGroupProfileModel groupProfileModel,bool isMute,List<dynamic> groupList,int serverTime) {
     final theme = Provider.of<TUIThemeViewModel>(context).theme;
     final isDesktopScreen = TUIKitScreenUtils.getFormFactor() == DeviceType.Desktop;
     final isGroupMember = memberInfo.role == GroupMemberRoleType.V2TIM_GROUP_MEMBER_ROLE_MEMBER;
+
     return Container(
         color: Colors.white,
         child: Slidable(
@@ -157,7 +177,7 @@ class _GroupProfileMemberListState extends TIMUIKitState<GroupProfileMemberList>
                         type: 1,
                       ),
                     ),
-                    Text(_getShowName(memberInfo), style: TextStyle(fontSize: isDesktopScreen ? 14 : 16)),
+                    Text("${_getShowName(memberInfo)}", style: TextStyle(fontSize: isDesktopScreen ? 14 : 16)),
                     memberInfo.role == GroupMemberRoleType.V2TIM_GROUP_MEMBER_ROLE_OWNER
                         ? Container(
                             margin: const EdgeInsets.only(left: 5),
@@ -186,7 +206,47 @@ class _GroupProfileMemberListState extends TIMUIKitState<GroupProfileMemberList>
                                   borderRadius: const BorderRadius.all(Radius.circular(4.0)),
                                 ),
                               )
-                            : Container()
+                            : Container(),
+                    if((
+                        groupProfileModel.groupInfo?.role == GroupMemberRoleType.V2TIM_GROUP_MEMBER_ROLE_OWNER ||
+                            groupProfileModel.groupInfo?.role == GroupMemberRoleType.V2TIM_GROUP_MEMBER_ROLE_ADMIN
+                     ) && memberInfo.role == GroupMemberRoleType.V2TIM_GROUP_MEMBER_ROLE_MEMBER
+                        // && isGroupMember == false && isGroupOwner == false
+                    )
+                      GestureDetector(
+                        onTap: () async{
+                          V2TimCallback result = await TencentImSDKPlugin.v2TIMManager
+                              .getGroupManager().muteGroupMember(groupID: groupProfileModel.groupInfo?.groupID ?? "", userID: memberInfo.userID, seconds: isMute ? 0: 365*24*3600);
+                          if (result.code == 0) {
+                            final targetIndex = (groupList ?? []).indexWhere((e) => e!.userID == memberInfo.userID);
+                            WBToastUtil.showToastCenter(isMute ? "解除成功":"禁言成功");
+                            if (targetIndex != -1) {
+                              isMute = !isMute;
+                              final targetElem = groupList![targetIndex];
+                              targetElem?.muteUntil = isMute ? (serverTime ?? 0) + 365*24*10 : 0;
+                              groupList[targetIndex] = targetElem;
+                            }
+                            setState(() {});
+                            notifyListeners();
+                            // Navigator.pop(context);
+                          }else {
+                            WBToastUtil.showToastCenter(result.desc);
+                          }
+                        },
+                        child: Container(
+                          margin: const EdgeInsets.only(left: 5),
+                          child: Text(TIM_t( !isMute ? "禁言":"解除禁言"),
+                              style: TextStyle(
+                                color:!isMute ? CommonColor.weakTextColor : CommonColor.cautionColor,
+                                fontSize: isDesktopScreen ? 10 : 12,
+                              )),
+                          padding: const EdgeInsets.fromLTRB(5, 0, 5, 0),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: !isMute ? CommonColor.weakTextColor : CommonColor.cautionColor, width: 1),
+                            borderRadius: const BorderRadius.all(Radius.circular(4.0)),
+                          ),
+                        ),
+                      )
                   ],
                 ),
                 onTap: () {
@@ -240,7 +300,7 @@ class _GroupProfileMemberListState extends TIMUIKitState<GroupProfileMemberList>
     final TUITheme theme = value.theme;
 
     final isDesktopScreen = TUIKitScreenUtils.getFormFactor() == DeviceType.Desktop;
-
+    final TUIGroupProfileModel groupProfileModel = Provider.of<TUIGroupProfileModel>(context);
     final throteFunction = OptimizeUtils.throttle((ScrollNotification notification) {
       final pixels = notification.metrics.pixels;
       // 总像素高度
@@ -278,8 +338,13 @@ class _GroupProfileMemberListState extends TIMUIKitState<GroupProfileMemberList>
                         },
                         itemBuilder: (context, index) {
                           final memberInfo = showList[index].memberInfo as V2TimGroupMemberFullInfo;
-
-                          return _buildListItem(context, memberInfo);
+                          DateTime now = DateTime.now();
+                          int serverTime = now.millisecondsSinceEpoch ~/ 1000;
+                          final isMute = (serverTime != null
+                              ? (memberInfo.muteUntil ?? 0) > serverTime!
+                              : false);
+                          List memberlist = widget.memberList;
+                          return _buildListItem(context, memberInfo,groupProfileModel,isMute,memberlist,serverTime);
                         }),
                   ),
           ))
