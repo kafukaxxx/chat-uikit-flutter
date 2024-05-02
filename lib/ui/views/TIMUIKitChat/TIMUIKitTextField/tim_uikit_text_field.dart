@@ -130,7 +130,7 @@ class TIMUIKitInputTextField extends StatefulWidget {
   State<StatefulWidget> createState() => _InputTextFieldState();
 }
 
-class _InputTextFieldState extends TIMUIKitState<TIMUIKitInputTextField> {
+class _InputTextFieldState extends TIMUIKitState<TIMUIKitInputTextField> with SingleTickerProviderStateMixin{
   final TUIChatGlobalModel globalModel = serviceLocator<TUIChatGlobalModel>();
   final TUISettingModel settingModel = serviceLocator<TUISettingModel>();
   final RegExp atTextReg = RegExp(r'@([^@\s]*)');
@@ -149,7 +149,10 @@ class _InputTextFieldState extends TIMUIKitState<TIMUIKitInputTextField> {
   bool _isComposingText = false;
   int latestSendEditStatusTime = DateTime.now().millisecondsSinceEpoch;
   List<CustomStickerPackage> stickerPackageList = [];
-
+  final GlobalKey enterKey = GlobalKey();
+  late Animation<double> animation;
+  late AnimationController animateController;
+  String enterType = "1";
 
   generateStickerList() {
     if (widget.customStickerPanel != null) {
@@ -354,7 +357,7 @@ class _InputTextFieldState extends TIMUIKitState<TIMUIKitInputTextField> {
     }
     var dic = "{\"original\":\"${textEditingController.text.trim()}\"}";
     final text = AESTools.encryptString(dic);
-    print("encrypt str :${text}");
+    // print("encrypt str :${text}");
     final convType = widget.conversationType;
     if (text.isNotEmpty && text != zeroWidthSpace) {
       if (widget.model.repliedMessage != null) {
@@ -668,21 +671,31 @@ class _InputTextFieldState extends TIMUIKitState<TIMUIKitInputTextField> {
   KeyEventResult handleDesktopKeyEvent(FocusNode node, RawKeyEvent event) {
     final activeIndex = widget.model.activeAtIndex;
     final showMemberList = widget.model.showAtMemberList;
-    final isPressEnter = (event.physicalKey == PhysicalKeyboardKey.enter) || (event.physicalKey == PhysicalKeyboardKey.numpadEnter);
+    bool isPressEnter;
+    if(enterType == '2') {
+      isPressEnter = ((event.isShiftPressed || event.isAltPressed || event.isControlPressed || event.isMetaPressed)
+          && event.logicalKey == LogicalKeyboardKey.enter) ||
+          ((event.isShiftPressed || event.isAltPressed || event.isControlPressed || event.isMetaPressed)
+              && event.logicalKey == LogicalKeyboardKey.numpadEnter);
+    }else {
+      isPressEnter = (event.physicalKey == PhysicalKeyboardKey.enter) || (event.physicalKey == PhysicalKeyboardKey.numpadEnter);
+    }
     if (event.runtimeType == RawKeyDownEvent) {
       if (event.physicalKey == PhysicalKeyboardKey.backspace) {
         if (textEditingController.text.isEmpty && lastText.isEmpty) {
           widget.model.repliedMessage = null;
           return KeyEventResult.handled;
         }
-      } else if ((event.isShiftPressed || event.isAltPressed || event.isControlPressed || event.isMetaPressed) && isPressEnter) {
-        final offset = textEditingController.selection.baseOffset;
-        textEditingController.text = '${lastText.substring(0, offset)}\n${lastText.substring(offset)}';
-        textEditingController.selection = TextSelection.fromPosition(TextPosition(offset: offset + 1));
-        lastText = textEditingController.text;
-
-        return KeyEventResult.handled;
-      } else if (isPressEnter) {
+      }
+      // else if ((event.isShiftPressed || event.isAltPressed || event.isControlPressed || event.isMetaPressed) && isPressEnter) {
+      //   final offset = textEditingController.selection.baseOffset;
+      //   textEditingController.text = '${lastText.substring(0, offset)}\n${lastText.substring(offset)}';
+      //   textEditingController.selection = TextSelection.fromPosition(TextPosition(offset: offset + 1));
+      //   lastText = textEditingController.text;
+      //
+      //   return KeyEventResult.handled;
+      // }
+      else if (isPressEnter) {
         if (!_isComposingText) {
           if (!isAddingAtSearchWords || widget.model.showAtMemberList.isEmpty) {
             onSubmitted();
@@ -718,6 +731,14 @@ class _InputTextFieldState extends TIMUIKitState<TIMUIKitInputTextField> {
   @override
   void initState() {
     super.initState();
+
+    animateController = AnimationController(
+      duration: Duration(milliseconds: 200),
+      vsync: this,
+    );
+    animation = Tween<double>(begin: 0,end: 0.5*pi).animate(CurvedAnimation(parent: animateController,curve: Curves.easeInOut));
+
+
     if (PlatformUtils().isWeb || PlatformUtils().isDesktop) {
       focusNode = FocusNode(
         onKey: (node, event) => handleDesktopKeyEvent(node, event),
@@ -785,7 +806,91 @@ class _InputTextFieldState extends TIMUIKitState<TIMUIKitInputTextField> {
       widget.controller?.removeListener(controllerHandler);
     }
     focusNode.dispose();
+    animateController.dispose();
     super.dispose();
+  }
+
+  void forword() {
+    // animation = Tween<double>(
+    //   begin: 0.0,
+    //   end: 2 * pi, // 360度，即一圈
+    // ).animate(animateController);
+
+    animateController.repeat();
+    Future.delayed(const Duration(seconds: 1),() {
+      animateController.stop();
+    });
+  }
+
+  void changeEnter() {
+    if (animateController.status == AnimationStatus.completed) {
+      animateController.reverse();
+      // Navigator.of(context).pop();
+    } else {
+      animateController.forward();
+    }
+    showPop();
+
+  }
+
+  void showPop() {
+    RenderBox box = enterKey.currentContext!.findRenderObject() as RenderBox;
+    Offset offset = box.localToGlobal(Offset.zero);
+    double height = box.size.height;
+    double width = box.size.width;
+    showMenu<String>(
+      constraints: BoxConstraints(minWidth: width, maxWidth: width),
+      context: context,
+      position:
+      RelativeRect.fromLTRB(offset.dx,offset.dy - 120, 9999, 0),
+      items: <PopupMenuEntry<String>>[
+        const PopupMenuItem<String>(
+          value:"1",
+          child: Text("Enter",style: TextStyle(fontSize: 10,),),
+        ),
+        const PopupMenuItem<String>(
+          value:"2",
+          child: Text("Ctrl+Enter",style: TextStyle(fontSize: 10,),),
+        )
+      ],
+      elevation: 8,
+    ).then((String? value) {
+      if (value?.isNotEmpty ?? false) {
+        setState(() {
+          enterType = value ?? "";
+        });
+      }
+      animateController.reset();
+    },
+    );
+
+  }
+
+  Widget enterWidget() {
+    return GestureDetector(
+      onTap: ()=>onSubmitted(),
+      child: Container(
+        key: enterKey,
+        padding:const EdgeInsets.symmetric(horizontal: 8,vertical: 5),
+        decoration:const BoxDecoration(
+            color: Color(0xFF3371CD),
+            borderRadius: BorderRadius.all(Radius.circular(20))
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text("发送 ${enterType == '1' ? 'Enter':'Ctrl+Enter'}",style:const TextStyle(color: Colors.white),),
+            const SizedBox(width: 4,),
+            InkWell(onTap: ()=>changeEnter(),child: AnimatedBuilder(
+                animation: animateController,
+                builder: (BuildContext context, Widget? child) {
+                  return Transform.rotate(angle:animation.value,child:const Icon(IconData(0xe246, fontFamily: 'MaterialIcons'),size: 12,color: Colors.white,));
+                }
+            ))
+          ],
+        ),
+      ),
+    );
   }
 
   Future<bool> getMemberMuteStatus(String userID) async {
@@ -948,6 +1053,7 @@ class _InputTextFieldState extends TIMUIKitState<TIMUIKitInputTextField> {
                       _handleAtText(text, model);
                     },
                     onSubmitted: onSubmitted,
+                    enterWidget: enterWidget(),
                     goDownBottom: goDownBottom,
                     showSendAudio: widget.showSendAudio,
                     showSendEmoji: widget.showSendEmoji,

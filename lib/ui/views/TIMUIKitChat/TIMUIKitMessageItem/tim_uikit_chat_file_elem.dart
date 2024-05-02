@@ -17,6 +17,7 @@ import 'package:tencent_cloud_chat_uikit/business_logic/view_models/tui_chat_glo
 import 'package:tencent_cloud_chat_uikit/business_logic/view_models/tui_self_info_view_model.dart';
 import 'package:tencent_cloud_chat_uikit/data_services/services_locatar.dart';
 import 'package:tencent_cloud_chat_uikit/tencent_cloud_chat_uikit.dart';
+import 'package:tencent_cloud_chat_uikit/ui/utils/logger.dart';
 import 'package:tencent_cloud_chat_uikit/ui/utils/permission.dart';
 import 'package:tencent_cloud_chat_uikit/ui/utils/platform.dart';
 import 'package:tencent_cloud_chat_uikit/ui/views/TIMUIKitChat/TIMUIKitMessageItem/TIMUIKitMessageReaction/tim_uikit_message_reaction_wrapper.dart';
@@ -426,6 +427,8 @@ class _TIMUIKitFileElemState extends TIMUIKitState<TIMUIKitFileElem> {
                     imgUrl);
                 decodeUrl = await opfile.path.decryptPath();
                 //用电脑自带插件打开，客户觉得卡 、改成有弹窗打开
+                // print("decodeUrl:$decodeUrl");
+                // outputLogger.i("decodeUrl:$decodeUrl");
                 // OpenFile.open(decodeUrl);
                 Navigator.of(context).push(
                   PageRouteBuilder(
@@ -558,6 +561,7 @@ class _TIMUIKitFileElemState extends TIMUIKitState<TIMUIKitFileElem> {
       var aescode = Uint8List.fromList( aesKey.codeUnits);
       var file = filex.readAsBytesSync();
       var imgfile = file.sublist(aescode.length,file.length);
+      print("imgfile:$imgfile");
       return imgfile;
     } catch(e) {
       print("get localImgData error：${e}");

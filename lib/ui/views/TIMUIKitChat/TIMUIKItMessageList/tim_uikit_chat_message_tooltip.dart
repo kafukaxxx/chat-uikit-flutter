@@ -214,8 +214,11 @@ class TIMUIKitMessageTooltipState
       TUITheme theme, TUIChatSeparateViewModel model, V2TimMessage message) {
     final isDesktopScreen =
         TUIKitScreenUtils.getFormFactor(context) == DeviceType.Desktop;
-    final isCanRevokeSelf = isRevocable(
-        widget.message.timestamp!, model.chatConfig.upperRecallTime);
+    // final isCanRevokeSelf = isRevocable(
+    //     widget.message.timestamp!, model.chatConfig.upperRecallTime);
+    final isCanRevokeSelf = isRevocable( //改成七天
+        widget.message.timestamp!, 7*24*3600);
+
     final shouldShowRevokeAction = (isCanRevokeSelf || isAdminCanRecall()) &&
         widget.message.status != MessageStatus.V2TIM_MSG_STATUS_SEND_FAIL;
     final shouldShowReplyAction = !(widget.message.customElem?.data != null &&

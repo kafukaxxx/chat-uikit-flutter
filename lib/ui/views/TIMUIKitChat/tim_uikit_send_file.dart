@@ -14,9 +14,10 @@ import 'package:tencent_cloud_chat_uikit/ui/utils/platform.dart';
 import 'package:tencent_cloud_chat_uikit/ui/widgets/wide_popup.dart';
 import 'package:path/path.dart' as path;
 import 'package:url_launcher/url_launcher.dart';
+import 'package:ffmpeg_kit_flutter/ffmpeg_kit.dart';
 import 'package:wb_flutter_tool/im_tool/wb_ext_file_path.dart';
-
 import 'TIMUIKitMessageItem/tim_uikit_chat_file_icon.dart';
+import 'package:audioplayers/audioplayers.dart';
 
 String _getConvID(V2TimConversation conversation) {
   return (conversation.type == 1
@@ -151,13 +152,32 @@ sendFileWithConfirmation(
                                 conversationType, context);
                             closeFunc();
                           },
-                          child: Text(TIM_t("发送")))
+                          child: Text(TIM_t("发送"),style:TextStyle(color: theme.weakBackgroundColor),))
                     ],
                   ),
                 )
               ],
             ),
           ));
+}
+Future<void> sendAudio(
+    XFile file,
+    TUIChatSeparateViewModel model,
+    V2TimConversation conversation,
+    ConvType conversationType,
+    BuildContext context) async{
+  AudioPlayer audioPlayer = AudioPlayer();
+  var duration = await audioPlayer.setSourceDeviceFile(file.path)
+      .then((_) => audioPlayer.getDuration());
+  int durationInSeconds = (duration?.inSeconds ?? 0).toInt();
+  //发送
+  await MessageUtils.handleMessageError(
+    model.sendSoundMessage(
+        soundPath: file.path,
+        duration: durationInSeconds,
+        convID: _getConvID(conversation),
+        convType: conversationType
+    ),context);
 }
 
 Future<void> sendFiles(
@@ -170,7 +190,14 @@ Future<void> sendFiles(
     final fileName = file.name;
     final filePath = file.path;
     var fileformat = fileName.split(".")[max(filePath.split(".").length - 1, 0)];
-    var encryPath = await filePath.encrypyPath(fileformat);
+    var encryPath = "";
+    if(fileformat == 'm4a' || fileformat == 'mp3') { //发送音频
+      await sendAudio(file,model,conversation,conversationType,context);
+      await Future.delayed(const Duration(microseconds: 300));
+      return;
+    }else {
+      encryPath = await filePath.encrypyPath(fileformat);
+    }
     if (encryPath.isNotEmpty) {
       await MessageUtils.handleMessageError(
           model.sendFileMessage(
