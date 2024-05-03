@@ -911,9 +911,11 @@ class TUIChatSeparateViewModel extends ChangeNotifier {
 
   Future<V2TimValueCallback<V2TimMessage>?> sendVideoMessage({String? videoPath, int? duration, String? snapshotPath, required String convID, required ConvType convType, dynamic inputElement}) async {
     List<V2TimMessage> currentHistoryMsgList = getOriginMessageList();
+    print("currentHistoryMsgList:${currentHistoryMsgList.length}");
     final videoMessageInfo =
         await _messageService.createVideoMessage(videoPath: videoPath, type: videoPath != null ? videoPath.split(".")[videoPath.split(".").length - 1] : 'mp4', duration: duration, inputElement: inputElement, snapshotPath: snapshotPath);
     final messageInfo = videoMessageInfo!.messageInfo;
+    print("messageInfo:$messageInfo");
     if (messageInfo != null) {
       final messageInfoWithSender = tools.setUserInfoForMessage(messageInfo, videoMessageInfo.id);
       V2TimMessage? lifeCycleMsg;

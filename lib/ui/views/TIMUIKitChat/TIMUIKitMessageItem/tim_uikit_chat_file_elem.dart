@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -13,12 +14,16 @@ import 'package:tencent_cloud_chat_uikit/base_widgets/tim_ui_kit_base.dart';
 import 'package:tencent_cloud_chat_uikit/base_widgets/tim_ui_kit_state.dart';
 import 'package:tencent_cloud_chat_uikit/business_logic/separate_models/tui_chat_separate_view_model.dart';
 import 'package:tencent_cloud_chat_uikit/business_logic/view_models/tui_chat_global_model.dart';
+import 'package:tencent_cloud_chat_uikit/business_logic/view_models/tui_self_info_view_model.dart';
 import 'package:tencent_cloud_chat_uikit/data_services/services_locatar.dart';
 import 'package:tencent_cloud_chat_uikit/tencent_cloud_chat_uikit.dart';
+import 'package:tencent_cloud_chat_uikit/ui/utils/logger.dart';
 import 'package:tencent_cloud_chat_uikit/ui/utils/permission.dart';
 import 'package:tencent_cloud_chat_uikit/ui/utils/platform.dart';
 import 'package:tencent_cloud_chat_uikit/ui/views/TIMUIKitChat/TIMUIKitMessageItem/TIMUIKitMessageReaction/tim_uikit_message_reaction_wrapper.dart';
 import 'package:tencent_cloud_chat_uikit/ui/views/TIMUIKitChat/TIMUIKitMessageItem/tim_uikit_chat_file_icon.dart';
+import 'package:tencent_cloud_chat_uikit/ui/widgets/avatar.dart';
+import 'package:tencent_cloud_chat_uikit/ui/widgets/image_screen.dart';
 import 'package:tencent_cloud_chat_uikit/ui/widgets/textSize.dart';
 import 'package:universal_html/html.dart' as html;
 import 'package:url_launcher/url_launcher.dart';
@@ -56,6 +61,8 @@ class _TIMUIKitFileElemState extends TIMUIKitState<TIMUIKitFileElem> {
   bool? _downloadFailed = false;
   String imgUrl = "";
   String decryptLocalPath = "";
+  String decodeUrl = "";
+  final TUISelfInfoViewModel selfInfoViewModel = serviceLocator<TUISelfInfoViewModel>();
 
   @override
   void dispose() {
@@ -171,6 +178,7 @@ class _TIMUIKitFileElemState extends TIMUIKitState<TIMUIKitFileElem> {
     if (f.existsSync() && widget.messageID != null) {
       filePath = savePath;
       var tmpstr = await filePath.decryptPath();
+      print("tmpstr:$tmpstr");
       // if (mounted) {
         // setState(() {
           decryptLocalPath = tmpstr;
@@ -335,6 +343,45 @@ class _TIMUIKitFileElemState extends TIMUIKitState<TIMUIKitFileElem> {
     }
   }
 
+  Widget getImageWidget(BuildContext context, TUITheme theme) {
+    Widget defaultAvatar() {
+      return Image.asset(
+          TencentUtils.checkString(
+              selfInfoViewModel.globalConfig?.defaultAvatarAssetPath) ??
+              'images/default_c2c_head.png',
+          fit: BoxFit.cover,
+          package:
+          selfInfoViewModel.globalConfig?.defaultAvatarAssetPath != null
+              ? null
+              : 'tencent_cloud_chat_uikit');
+    }
+    return defaultAvatar();
+  }
+
+  ImageProvider getImageProvider(String? url) {
+    ImageProvider defaultAvatar() {
+      return Image.asset(
+          TencentUtils.checkString(selfInfoViewModel
+              .globalConfig?.defaultAvatarAssetPath) ??
+              'images/default_c2c_head.png',
+          fit: BoxFit.cover,
+          package: selfInfoViewModel.globalConfig?.defaultAvatarAssetPath != null ? null
+              : 'tencent_cloud_chat_uikit').image;
+    }
+    if (imgUrl.isNotEmpty) {
+      if(url?.isNotEmpty ?? false) {
+        return Image.file(File(url ?? ""),width: 200,).image;
+      } else if (decryptLocalPath.isNotEmpty) {
+        return Image.file(File(decryptLocalPath),width: 200,).image;
+      }
+      return defaultAvatar();
+    } else {
+      WBToastUtil.showToastCenter("图片解析失败");
+      return defaultAvatar();
+    }
+  }
+
+
   @override
   Widget tuiBuild(BuildContext context, TUIKitBuildValue value) {
     final theme = value.theme;
@@ -353,7 +400,6 @@ class _TIMUIKitFileElemState extends TIMUIKitState<TIMUIKitFileElem> {
     if (containerRenderBox != null) {
       containerHeight = containerRenderBox.size.height;
     }
-
     return Row(
       key: containerKey,
       mainAxisSize: MainAxisSize.min,
@@ -368,6 +414,7 @@ class _TIMUIKitFileElemState extends TIMUIKitState<TIMUIKitFileElem> {
         //   ),
         GestureDetector(
           onTap: () async {
+
             try {
               if (PlatformUtils().isWeb) {
                 if (!isWebDownloading) {
@@ -378,8 +425,18 @@ class _TIMUIKitFileElemState extends TIMUIKitState<TIMUIKitFileElem> {
               if (imgUrl.isNotEmpty) {
                 var opfile = await DefaultCacheManager().getSingleFile(
                     imgUrl);
-                var pp = await opfile.path.decryptPath();
-                OpenFile.open(pp);
+                decodeUrl = await opfile.path.decryptPath();
+                //用电脑自带插件打开，客户觉得卡 、改成有弹窗打开
+                // print("decodeUrl:$decodeUrl");
+                // outputLogger.i("decodeUrl:$decodeUrl");
+                // OpenFile.open(decodeUrl);
+                Navigator.of(context).push(
+                  PageRouteBuilder(
+                    opaque: false, // set to false
+                    pageBuilder: (_, __, ___) => ImageScreen(
+                        imageProvider: getImageProvider(decodeUrl), heroTag: decodeUrl),
+                  ),
+                );
               }
               if (await hasFile()) {
                 if (received == 100) {
@@ -407,9 +464,12 @@ class _TIMUIKitFileElemState extends TIMUIKitState<TIMUIKitFileElem> {
               onTIMCallback(TIMCallback(type: TIMCallbackType.INFO, infoRecommendText: "文件处理异常", infoCode: 6660416));
             }
           },
-          child:(decryptLocalPath.isEmpty ? (imgUrl.isEmpty ? Text("处理中.....") :  _renderCacheImage(url: imgUrl)) : Container(
-            child: Image.file(File(decryptLocalPath),width: 200,),
-          )),
+          child:Hero(
+            tag: decodeUrl,
+            child: (decryptLocalPath.isEmpty ? (imgUrl.isEmpty ? Text("处理中.....") :  _renderCacheImage(url: imgUrl)) : Container(
+              child: Image.file(File(decryptLocalPath),width: 200,),
+            )),
+          ),
         ),
         // TIMUIKitMessageReactionWrapper(
         //     chatModel: widget.chatModel,
@@ -501,6 +561,7 @@ class _TIMUIKitFileElemState extends TIMUIKitState<TIMUIKitFileElem> {
       var aescode = Uint8List.fromList( aesKey.codeUnits);
       var file = filex.readAsBytesSync();
       var imgfile = file.sublist(aescode.length,file.length);
+      print("imgfile:$imgfile");
       return imgfile;
     } catch(e) {
       print("get localImgData error：${e}");

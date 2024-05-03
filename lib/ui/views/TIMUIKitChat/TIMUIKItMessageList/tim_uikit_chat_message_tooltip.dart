@@ -214,8 +214,11 @@ class TIMUIKitMessageTooltipState
       TUITheme theme, TUIChatSeparateViewModel model, V2TimMessage message) {
     final isDesktopScreen =
         TUIKitScreenUtils.getFormFactor(context) == DeviceType.Desktop;
-    final isCanRevokeSelf = isRevocable(
-        widget.message.timestamp!, model.chatConfig.upperRecallTime);
+    // final isCanRevokeSelf = isRevocable(
+    //     widget.message.timestamp!, model.chatConfig.upperRecallTime);
+    final isCanRevokeSelf = isRevocable( //改成七天
+        widget.message.timestamp!, 7*24*3600);
+
     final shouldShowRevokeAction = (isCanRevokeSelf || isAdminCanRecall()) &&
         widget.message.status != MessageStatus.V2TIM_MSG_STATUS_SEND_FAIL;
     final shouldShowReplyAction = !(widget.message.customElem?.data != null &&
@@ -228,6 +231,9 @@ class TIMUIKitMessageTooltipState
         (isDesktopScreen &&
             widget.message.elemType == MessageElemType.V2TIM_ELEM_TYPE_IMAGE &&
             fileBeenDownloaded) || (isDesktopScreen && (widget.message.elemType == MessageElemType.V2TIM_ELEM_TYPE_FILE) && fileBeenDownloaded);
+    final isSave =  widget.message.elemType ==  (isDesktopScreen &&
+        widget.message.elemType == MessageElemType.V2TIM_ELEM_TYPE_IMAGE &&
+        fileBeenDownloaded) || (isDesktopScreen && (widget.message.elemType == MessageElemType.V2TIM_ELEM_TYPE_FILE) && fileBeenDownloaded);
     bool fileCanTransfer = true;
     bool fileCanMutilSelect = true;
     if (message.elemType == 2) {
@@ -275,6 +281,13 @@ class TIMUIKitMessageTooltipState
             id: "multiSelect",
             iconImageAsset: "images/multi_message.png",
             onClick: () => _onTap("multiSelect", model)),
+      if(isSave)
+      MessageToolTipItem(
+          label: TIM_t("保存"),
+          id: "saveImage",
+          iconImageAsset: "images/download.png",
+          onClick: () => _onTap("saveImage", model)),
+
       // MessageToolTipItem(
       //     label: TIM_t("翻译"),
       //     id: "translate",
@@ -548,7 +561,7 @@ class TIMUIKitMessageTooltipState
             context: context,
             title: TIM_t("转发"),
             submitWidget: Text(TIM_t("发送")),
-            width: MediaQuery.of(context).size.width * 0.5,
+            width: MediaQuery.of(context).size.width * 0.3,
             height: MediaQuery.of(context).size.height * 0.8,
             onSubmit: () {
               forwardMessageScreenKey.currentState?.handleForwardMessage();
@@ -618,6 +631,26 @@ class TIMUIKitMessageTooltipState
         widget.onLongPressForOthersHeadPortrait!(
             !isAtWhenReply ? null : widget.message.sender,
             !isAtWhenReply ? null : widget.message.nickName);
+        break;
+      case "saveImage":
+         if (widget.message.elemType == MessageElemType.V2TIM_ELEM_TYPE_IMAGE) {
+          final savePath = (TencentUtils.checkString(widget.message.imageElem!.imageList?[0]?.localUrl) ??
+          TencentUtils.checkString(widget.message.imageElem?.path) ?? "");
+          OpenFile.open(savePath);
+         }
+         else if (widget.message.elemType == MessageElemType.V2TIM_ELEM_TYPE_FILE) {
+          String savepath = "";
+          if (filePath.isNotEmpty) {
+          savepath = await filePath.decryptPath();
+          }else {
+          EasyLoading.show();
+          V2TimValueCallback<V2TimMessageOnlineUrl> imgdata = await TencentImSDKPlugin.v2TIMManager.getMessageManager().getMessageOnlineUrl(msgID: widget.message.msgID!);
+          var imgUrl = imgdata.data?.fileElem?.url ?? "";
+          var opfile = await DefaultCacheManager().getSingleFile(imgUrl);
+          savepath = await opfile.path.decryptPath();
+         }
+         await OpenFile.open(savepath);
+        }
         break;
       default:
         onTIMCallback(TIMCallback(

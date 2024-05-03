@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:tencent_cloud_chat_uikit/base_widgets/tim_ui_kit_state.dart';
 import 'package:tencent_cloud_chat_uikit/business_logic/separate_models/tui_chat_separate_view_model.dart';
@@ -62,6 +63,7 @@ class _ForwardMessageScreenState extends TIMUIKitState<ForwardMessageScreen> {
   }
 
   handleForwardMessage() async {
+    print("_conversationList:${_conversationList}");
     if (widget.isMergerForward) {
       await widget.model.sendMergerMessage(
         conversationList: _conversationList,
@@ -98,8 +100,8 @@ class _ForwardMessageScreenState extends TIMUIKitState<ForwardMessageScreen> {
       return RecentForwardList(
         isMultiSelect: isMultiSelect,
         onChanged: (conversationList) {
+          print("conversationList:$conversationList");
           _conversationList = conversationList;
-
           if (!isMultiSelect) {
             handleForwardMessage();
           }

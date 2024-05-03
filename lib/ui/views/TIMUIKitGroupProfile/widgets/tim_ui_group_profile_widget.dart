@@ -26,8 +26,10 @@ class TIMUIKitGroupProfileWidget {
     );
   }
 
-  static Widget memberTile() {
-    return GroupMemberTile();
+  static Widget memberTile({
+    bool isHavePermission = false,
+  }) {
+    return GroupMemberTile(isHavePermission: isHavePermission);
   }
 
   static Widget groupNotification({

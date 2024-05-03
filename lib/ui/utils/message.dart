@@ -146,12 +146,18 @@ class MessageUtils {
           changedInfoString +=
               (changedInfoString.isEmpty ? "" : " / ") + newText;
         }
+        if(changedInfoString.contains("群头像") && (changedInfoString.contains("http://") || changedInfoString.contains("https://")) ) {
+          changedInfoString = "群头像";
+        }
         if (changedInfoString.isEmpty) {
           changedInfoString = TIM_t("群资料");
         }
+
         displayMessage =
             TIM_t_para("{{option7}}修改", "$option7修改")(option7: option7) +
                 changedInfoString;
+
+        print("changedInfoString:$changedInfoString");
         break;
       case GroupTipsElemType.V2TIM_GROUP_TIPS_TYPE_QUIT:
         final String? option6 = opUserNickName ?? "";

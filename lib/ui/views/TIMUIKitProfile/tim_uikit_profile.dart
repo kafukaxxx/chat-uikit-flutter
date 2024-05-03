@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:provider/provider.dart';
@@ -10,6 +11,7 @@ import 'package:tencent_cloud_chat_uikit/tencent_cloud_chat_uikit.dart';
 import 'package:tencent_cloud_chat_uikit/base_widgets/tim_ui_kit_base.dart';
 import 'package:tencent_cloud_chat_uikit/ui/utils/screen_utils.dart';
 import 'package:tencent_cloud_chat_uikit/ui/views/TIMUIKitProfile/profile_widget.dart';
+import 'package:tencent_cloud_chat_uikit/ui/views/TIMUIKitProfile/widget/Dgg_profile_widget.dart';
 import 'package:tencent_cloud_chat_uikit/ui/views/TIMUIKitProfile/widget/tim_uikit_profile_widget.dart';
 import 'package:wb_flutter_tool/wb_flutter_tool.dart';
 
@@ -471,7 +473,19 @@ class _TIMUIKitProfileState extends TIMUIKitState<TIMUIKitProfile> {
                       ? customBuilder?.customBuilderFive!(
                           isFriend, userInfo, conversation)
                       // Please define the corresponding custom widget in `profileWidgetBuilder` before using it here.
-                      : Text(TIM_t("如使用自定义区域，请在profileWidgetBuilder传入对应组件")))!;
+                      : DggProfileWidget.shareUserCard(
+                              userInfo,
+                              conversation,
+                              value.friendType,
+                              isMute,
+                              model.isAddToBlackList ?? false,
+                              theme,
+                              handleAddFriend,
+                              handleDeleteFriend,
+                              widget.smallCardMode,
+                              context
+                          )
+                  )!;
 
                 default:
                   return Container();
