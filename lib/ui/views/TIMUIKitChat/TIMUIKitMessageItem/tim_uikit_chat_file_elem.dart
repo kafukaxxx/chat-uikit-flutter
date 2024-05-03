@@ -6,6 +6,7 @@ import 'dart:typed_data';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:loading_animation_widget/loading_animation_widget.dart';
@@ -466,7 +467,9 @@ class _TIMUIKitFileElemState extends TIMUIKitState<TIMUIKitFileElem> {
           },
           child:Hero(
             tag: decodeUrl,
-            child: (decryptLocalPath.isEmpty ? (imgUrl.isEmpty ? Text("处理中.....") :  _renderCacheImage(url: imgUrl)) : Container(
+            child: (decryptLocalPath.isEmpty ? //本地有没有缓存文件
+            (imgUrl.isEmpty ? _emptyImage() :  _renderCacheImage(url: imgUrl)) :
+            Container( //读取本地缓存文件
               child: Image.file(File(decryptLocalPath),width: 200,),
             )),
           ),
@@ -532,6 +535,17 @@ class _TIMUIKitFileElemState extends TIMUIKitState<TIMUIKitFileElem> {
         //     ),
         //   ),
       ],
+    );
+  }
+
+  Widget _emptyImage() {
+    return Container(
+        width: 200,
+        height: 200,
+        padding:const EdgeInsets.symmetric(horizontal: 10),
+        color: Colors.grey,
+        alignment: Alignment.center,
+        child:const Text("图片地址获取失败，请切换窗口重新加载...",style: TextStyle(color: Colors.white),),
     );
   }
   Widget _renderCacheImage({dynamic heroTag,required String url}) {
