@@ -91,8 +91,6 @@ class TUIChatSeparateViewModel extends ChangeNotifier {
     notifyListeners();
   }
   onRightClickUser(String userID, TapDownDetails tapDetails,BuildContext context) {
-    print("groupInfo:${groupInfo},userlist：${groupMemberList}");
-
     var mo = groupMemberList?.where((element) => element?.userID == userID).toList();
 
     var isMute = (serverTime != null
@@ -911,11 +909,9 @@ class TUIChatSeparateViewModel extends ChangeNotifier {
 
   Future<V2TimValueCallback<V2TimMessage>?> sendVideoMessage({String? videoPath, int? duration, String? snapshotPath, required String convID, required ConvType convType, dynamic inputElement}) async {
     List<V2TimMessage> currentHistoryMsgList = getOriginMessageList();
-    print("currentHistoryMsgList:${currentHistoryMsgList.length}");
     final videoMessageInfo =
         await _messageService.createVideoMessage(videoPath: videoPath, type: videoPath != null ? videoPath.split(".")[videoPath.split(".").length - 1] : 'mp4', duration: duration, inputElement: inputElement, snapshotPath: snapshotPath);
     final messageInfo = videoMessageInfo!.messageInfo;
-    print("messageInfo:$messageInfo");
     if (messageInfo != null) {
       final messageInfoWithSender = tools.setUserInfoForMessage(messageInfo, videoMessageInfo.id);
       V2TimMessage? lifeCycleMsg;
@@ -1229,19 +1225,22 @@ class TUIChatSeparateViewModel extends ChangeNotifier {
     globalModel.setMessageList(conversationID, []);
   }
 
-  Future<Object?> revokeMsg(String msgID, bool isAdmin, [Object? webMessageInstance]) async {
-    if (chatConfig.isGroupAdminRecallEnabled) {
-      final V2TimMessage? message = globalModel.messageListMap[conversationID]?.firstWhere((element) => element.msgID == msgID);
-      if (message != null) {
-        if (PlatformUtils().isWeb) {
-          final decodedMessage = jsonDecode(message.messageFromWeb!);
-          decodedMessage["cloudCustomData"] = jsonEncode({"isRevoke": true, "revokeByAdmin": isAdmin});
-          message.messageFromWeb = jsonEncode(decodedMessage);
-        } else {
-          message.cloudCustomData = jsonEncode({"isRevoke": true, "revokeByAdmin": isAdmin});
+  Future<Object?> revokeMsg(String msgID, bool isAdmin, [Object? webMessageInstance,V2TimMessage? TimMessage]) async {
+    if(TimMessage != null && (TimMessage.groupID != null)) {
+      if (chatConfig.isGroupAdminRecallEnabled) {
+        final V2TimMessage? message = globalModel.messageListMap[conversationID]?.firstWhere((element) => element.msgID == msgID);
+        if (message != null) {
+          if (PlatformUtils().isWeb) {
+            final decodedMessage = jsonDecode(message.messageFromWeb!);
+            decodedMessage["cloudCustomData"] = jsonEncode({"isRevoke": true, "revokeByAdmin": isAdmin});
+            message.messageFromWeb = jsonEncode(decodedMessage);
+          } else {
+            message.cloudCustomData = jsonEncode({"isRevoke": true, "revokeByAdmin": isAdmin});
+          }
+          return await modifyMessage(message: message);
         }
-        return await modifyMessage(message: message);
       }
+
     }
 
     final res = await _messageService.revokeMessage(msgID: msgID, webMessageInstance: webMessageInstance);

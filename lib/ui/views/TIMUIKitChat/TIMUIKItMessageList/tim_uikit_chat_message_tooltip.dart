@@ -11,6 +11,7 @@ import 'package:flutter/services.dart';
 import 'package:image_clipboard/image_clipboard.dart';
 import 'package:open_file/open_file.dart';
 import 'package:provider/provider.dart';
+import 'package:tencent_cloud_chat_uikit/business_logic/separate_models/tui_group_profile_model.dart';
 import 'package:tencent_cloud_chat_uikit/business_logic/view_models/tui_self_info_view_model.dart';
 import 'package:tencent_cloud_chat_uikit/data_services/core/tim_uikit_wide_modal_operation_key.dart';
 import 'package:tencent_cloud_chat_uikit/data_services/services_locatar.dart';
@@ -537,7 +538,8 @@ class TIMUIKitMessageTooltipState
             msgID,
             !isRevocable(
                 widget.message.timestamp!, model.chatConfig.upperRecallTime),
-            messageItem.messageFromWeb);
+            messageItem.messageFromWeb,
+            widget.message);
         break;
       case 'translate':
       //FIXME: 翻译以后接

@@ -284,7 +284,7 @@ class _GroupMemberTileState extends TIMUIKitState<GroupMemberTile> {
                               TUIKitWidePopup.showPopupWindow(
                                 operationKey: TUIKitWideModalOperationKey.kickOffGroupMembers,
                                 context: context,
-                                width: MediaQuery.of(context).size.width * 0.5,
+                                width: MediaQuery.of(context).size.width * 0.3,
                                 title: TIM_t("删除群成员"),
                                 height:  MediaQuery.of(context).size.height * 0.8,
                                 onSubmit: () {
