@@ -65,7 +65,7 @@ class TUIProfileViewModel extends ChangeNotifier {
     final checkFriend = await _friendshipServices.checkFriend(
         userIDList: [userID],
         checkType: FriendTypeEnum.V2TIM_FRIEND_TYPE_SINGLE);
-    i("检测好友信息：${checkFriend?.first?.toJson().toString()}");
+    i("检测好友信息：${checkFriend?.first.toJson().toString()}");
     if (checkFriend != null) {
       final res = checkFriend.first;
       if (res.resultCode == 0) {
