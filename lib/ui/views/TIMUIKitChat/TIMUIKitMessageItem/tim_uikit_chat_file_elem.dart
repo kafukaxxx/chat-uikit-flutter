@@ -149,7 +149,6 @@ class _TIMUIKitFileElemState extends TIMUIKitState<TIMUIKitFileElem> {
         setState(() {
           imgUrl = imgdata.data?.fileElem?.url ?? "";
         });
-
       }
 
     String savePath = TencentUtils.checkString(model.getFileMessageLocation(widget.messageID)) ?? TencentUtils.checkString(widget.message.fileElem!.localUrl) ?? widget.message.fileElem?.path ?? '';
@@ -169,6 +168,8 @@ class _TIMUIKitFileElemState extends TIMUIKitState<TIMUIKitFileElem> {
 
 
     }
+
+    print("GetStorage():${GetStorage().read<String>("wbdownloadPath")} --savePath:$savePath");
     if (savePath == "") {
       if (WBManager().downloadPath.isNotEmpty) {
         print("空的id :${widget.message.fileElem?.UUID}");
@@ -176,6 +177,7 @@ class _TIMUIKitFileElemState extends TIMUIKitState<TIMUIKitFileElem> {
       }
     }
     File f = File(savePath);
+
     if (f.existsSync() && widget.messageID != null) {
       filePath = savePath;
       var tmpstr = await filePath.decryptPath();
