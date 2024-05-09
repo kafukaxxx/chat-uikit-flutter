@@ -589,7 +589,7 @@ class _TIMUIKitFileElemState extends TIMUIKitState<TIMUIKitFileElem> {
       var aescode = Uint8List.fromList( aesKey.codeUnits);
       var file = filex.readAsBytesSync();
       var imgfile = file.sublist(aescode.length,file.length);
-      print("imgfile:$imgfile");
+      // print("imgfile:$imgfile");
       return imgfile;
     } catch(e) {
       print("get localImgData error：${e}");
