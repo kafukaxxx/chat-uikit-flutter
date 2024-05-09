@@ -115,7 +115,7 @@ class _TIMUIKitFileElemState extends TIMUIKitState<TIMUIKitFileElem> {
       },
     );
     TencentImSDKPlugin.v2TIMManager.getMessageManager().addAdvancedMsgListener(listener: advancedMsgListener);
-    dggAsyncDownloadFile();
+    // dggAsyncDownloadFile();
   }
   dggAsyncDownloadFile() async {
     if (await hasFile()) {
@@ -144,62 +144,73 @@ class _TIMUIKitFileElemState extends TIMUIKitState<TIMUIKitFileElem> {
     if (PlatformUtils().isWeb) {
       return true;
     }
+    if (GetStorage().read<String>(widget.messageID!)?.isNotEmpty ?? false) {
+     if (mounted) {
+       setState(() {
+         imgUrl = GetStorage().read(widget.messageID!);
+       });
+     }
+      return true;
+    }
     V2TimValueCallback<V2TimMessageOnlineUrl> imgdata = await TencentImSDKPlugin.v2TIMManager.getMessageManager().getMessageOnlineUrl(msgID: widget.messageID!);
       if (mounted) {
         setState(() {
           imgUrl = imgdata.data?.fileElem?.url ?? "";
+          GetStorage().write(widget.messageID!, imgUrl);
+          GetStorage().save();
         });
+        return true;
       }
 
-    String savePath = TencentUtils.checkString(model.getFileMessageLocation(widget.messageID)) ?? TencentUtils.checkString(widget.message.fileElem!.localUrl) ?? widget.message.fileElem?.path ?? '';
-    print("local file url:${widget.message.fileElem!.localUrl}, path:${widget.message.fileElem?.path}, savedPath:${savePath}");
-    if (savePath.contains("tencent/uploads/")) {
-      savePath = savePath.replaceAll("tencent/uploads/", "temp_tencent\\uploads\\").replaceAll("/", "\\");
-      print("changed path:${savePath}");
-    }
-    if (WBManager().downloadPath == "") {
-      if (savePath.contains("TencentCloudChat")) {
-        var downloadPath = savePath.split("\\").first;
-        if (downloadPath.isNotEmpty) {
-          WBManager().downloadPath = downloadPath + "\\";
-          GetStorage().write("wbdownloadPath", WBManager().downloadPath);
-        }
-      }
-
-
-    }
-
-    print("GetStorage():${GetStorage().read<String>("wbdownloadPath")} --savePath:$savePath");
-    if (savePath == "") {
-      if (WBManager().downloadPath.isNotEmpty) {
-        print("空的id :${widget.message.fileElem?.UUID}");
-        savePath = WBManager().downloadPath + (widget.message.fileElem?.UUID ?? "");
-      }
-    }
-    File f = File(savePath);
-
-    if (f.existsSync() && widget.messageID != null) {
-      filePath = savePath;
-      var tmpstr = await filePath.decryptPath();
-      print("tmpstr:$tmpstr");
-      // if (mounted) {
-        // setState(() {
-          decryptLocalPath = tmpstr;
-        // });
-      // }
-
-      if (downloadProgress != 100) {
-        if (mounted) {
-          // setState(() {
-            downloadProgress = 100;
-          // });
-        }
-      }
-      if (model.getMessageProgress(widget.messageID) != 100) {
-        model.setMessageProgress(widget.messageID!, 100);
-      }
-      return true;
-    }
+    // String savePath = TencentUtils.checkString(model.getFileMessageLocation(widget.messageID)) ?? TencentUtils.checkString(widget.message.fileElem!.localUrl) ?? widget.message.fileElem?.path ?? '';
+    // print("local file url:${widget.message.fileElem!.localUrl}, path:${widget.message.fileElem?.path}, savedPath:${savePath}");
+    // if (savePath.contains("tencent/uploads/")) {
+    //   savePath = savePath.replaceAll("tencent/uploads/", "temp_tencent\\uploads\\").replaceAll("/", "\\");
+    //   print("changed path:${savePath}");
+    // }
+    // if (WBManager().downloadPath == "") {
+    //   if (savePath.contains("TencentCloudChat")) {
+    //     var downloadPath = savePath.split("\\").first;
+    //     if (downloadPath.isNotEmpty) {
+    //       WBManager().downloadPath = downloadPath + "\\";
+    //       GetStorage().write("wbdownloadPath", WBManager().downloadPath);
+    //     }
+    //   }
+    //
+    //
+    // }
+    //
+    // print("GetStorage():${GetStorage().read<String>("wbdownloadPath")} --savePath:$savePath");
+    // if (savePath == "") {
+    //   if (WBManager().downloadPath.isNotEmpty) {
+    //     print("空的id :${widget.message.fileElem?.UUID}");
+    //     savePath = WBManager().downloadPath + (widget.message.fileElem?.UUID ?? "");
+    //   }
+    // }
+    // File f = File(savePath);
+    //
+    // if (f.existsSync() && widget.messageID != null) {
+    //   filePath = savePath;
+    //   var tmpstr = await filePath.decryptPath();
+    //   print("tmpstr:$tmpstr");
+    //   // if (mounted) {
+    //     // setState(() {
+    //       decryptLocalPath = tmpstr;
+    //     // });
+    //   // }
+    //
+    //   if (downloadProgress != 100) {
+    //     if (mounted) {
+    //       // setState(() {
+    //         downloadProgress = 100;
+    //       // });
+    //     }
+    //   }
+    //   if (model.getMessageProgress(widget.messageID) != 100) {
+    //     model.setMessageProgress(widget.messageID!, 100);
+    //   }
+    //   return true;
+    // }
     return false;
   }
 
@@ -440,6 +451,7 @@ class _TIMUIKitFileElemState extends TIMUIKitState<TIMUIKitFileElem> {
                         imageProvider: getImageProvider(decodeUrl), heroTag: decodeUrl),
                   ),
                 );
+                return;
               }
               if (await hasFile()) {
                 if (received == 100) {

@@ -1226,6 +1226,10 @@ class TUIChatSeparateViewModel extends ChangeNotifier {
   }
 
   Future<Object?> revokeMsg(String msgID, bool isAdmin, [Object? webMessageInstance,V2TimMessage? TimMessage]) async {
+    if(TimMessage?.status != MessageStatus.V2TIM_MSG_STATUS_SEND_SUCC) {
+       WBToastUtil.showToastCenter("未发送成功的消息不能撤回");
+       return Future(() => null);
+    }
     if(TimMessage != null && (TimMessage.groupID != null)) {
       if (chatConfig.isGroupAdminRecallEnabled) {
         final V2TimMessage? message = globalModel.messageListMap[conversationID]?.firstWhere((element) => element.msgID == msgID);
@@ -1240,7 +1244,6 @@ class TUIChatSeparateViewModel extends ChangeNotifier {
           return await modifyMessage(message: message);
         }
       }
-
     }
 
     final res = await _messageService.revokeMessage(msgID: msgID, webMessageInstance: webMessageInstance);

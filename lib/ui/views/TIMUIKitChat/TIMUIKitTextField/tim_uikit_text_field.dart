@@ -756,6 +756,7 @@ class _InputTextFieldState extends TIMUIKitState<TIMUIKitInputTextField> with Si
     final AppLocale appLocale = I18nUtils.findDeviceLocale(null);
     languageType = (appLocale == AppLocale.zhHans || appLocale == AppLocale.zhHant) ? 'zh' : 'en';
     textEditingController.addListener(() async{
+      // print("textEditingController:${textEditingController.text}");
       // String clipboardText = await Clipboard.getData(Clipboard.kTextPlain).then((value) => value?.text ?? ""); //获取粘贴数据
       // if(clipboardText.isNotEmpty) {
       //   // print("clipboardText:$clipboardText");
