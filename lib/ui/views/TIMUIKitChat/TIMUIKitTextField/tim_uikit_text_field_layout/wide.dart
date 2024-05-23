@@ -976,6 +976,7 @@ class _TIMUIKitTextFieldLayoutWideState
     var imgFile = Uint8List.fromList(aescode + filedata);
     var fileFormat = savePath.split(".")[max(savePath.split(".").length - 1, 0)];
     var encryptPath = await savePath.encrypyPath(fileFormat);
+    print("encryptPath:$encryptPath");
     int fileSize = imgFile.lengthInBytes;
     MessageUtils.handleMessageError(
         widget.model.sendFileMessage(convID: widget.conversationID,

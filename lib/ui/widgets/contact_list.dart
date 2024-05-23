@@ -176,6 +176,7 @@ class _ContactListState extends TIMUIKitState<ContactList> {
 
   Widget _buildItem(TUITheme theme, V2TimFriendInfo item) {
     final showName = _getShowName(item);
+    print("showName:$showName");
     final faceUrl = item.userProfile?.faceUrl ?? "";
 
     final V2TimUserStatus? onlineStatus = widget.isShowOnlineStatus
