@@ -1,0 +1,35 @@
+diff a/lib/business_logic/separate_models/tui_chat_separate_view_model.dart b/lib/business_logic/separate_models/tui_chat_separate_view_model.dart	(rejected hunks)
+@@ -1229,19 +1225,22 @@
+     globalModel.setMessageList(conversationID, []);
+   }
+ 
+-  Future<Object?> revokeMsg(String msgID, bool isAdmin, [Object? webMessageInstance]) async {
+-    if (chatConfig.isGroupAdminRecallEnabled) {
+-      final V2TimMessage? message = globalModel.messageListMap[conversationID]?.firstWhere((element) => element.msgID == msgID);
+-      if (message != null) {
+-        if (PlatformUtils().isWeb) {
+-          final decodedMessage = jsonDecode(message.messageFromWeb!);
+-          decodedMessage["cloudCustomData"] = jsonEncode({"isRevoke": true, "revokeByAdmin": isAdmin});
+-          message.messageFromWeb = jsonEncode(decodedMessage);
+-        } else {
+-          message.cloudCustomData = jsonEncode({"isRevoke": true, "revokeByAdmin": isAdmin});
++  Future<Object?> revokeMsg(String msgID, bool isAdmin, [Object? webMessageInstance,V2TimMessage? TimMessage]) async {
++    if(TimMessage != null && (TimMessage.groupID != null)) {
++      if (chatConfig.isGroupAdminRecallEnabled) {
++        final V2TimMessage? message = globalModel.messageListMap[conversationID]?.firstWhere((element) => element.msgID == msgID);
++        if (message != null) {
++          if (PlatformUtils().isWeb) {
++            final decodedMessage = jsonDecode(message.messageFromWeb!);
++            decodedMessage["cloudCustomData"] = jsonEncode({"isRevoke": true, "revokeByAdmin": isAdmin});
++            message.messageFromWeb = jsonEncode(decodedMessage);
++          } else {
++            message.cloudCustomData = jsonEncode({"isRevoke": true, "revokeByAdmin": isAdmin});
++          }
++          return await modifyMessage(message: message);
+         }
+-        return await modifyMessage(message: message);
+       }
++
+     }
+ 
+     final res = await _messageService.revokeMessage(msgID: msgID, webMessageInstance: webMessageInstance);

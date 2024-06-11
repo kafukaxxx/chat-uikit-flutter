@@ -90,8 +90,8 @@ class MultiSelectPanel extends TIMUIKitStatelessWidget {
                     IconButton(
                       icon: Image.asset('images/forward.png',
                           package: 'tencent_cloud_chat_uikit',
-                          color: theme.selectPanelTextIconColor),
-                      iconSize: 30,
+                          color: theme.selectPanelTextIconColor,width: 30,height: 30,),
+                      iconSize: 20,
                       onPressed: () {
                         _handleForwardMessageWide(context, false, model);
                       },
@@ -106,8 +106,8 @@ class MultiSelectPanel extends TIMUIKitStatelessWidget {
                     IconButton(
                       icon: Image.asset('images/merge_forward.png',
                           package: 'tencent_cloud_chat_uikit',
-                          color: theme.selectPanelTextIconColor),
-                      iconSize: 30,
+                          color: theme.selectPanelTextIconColor,width: 30,height: 30,),
+                      iconSize: 20,
                       onPressed: () {
                         _handleForwardMessageWide(context, true, model);
                       },
@@ -124,8 +124,8 @@ class MultiSelectPanel extends TIMUIKitStatelessWidget {
                     IconButton(
                       icon: Image.asset('images/delete.png',
                           package: 'tencent_cloud_chat_uikit',
-                          color: theme.selectPanelTextIconColor),
-                      iconSize: 30,
+                          color: theme.selectPanelTextIconColor,width: 30,height: 30,),
+                      iconSize: 20,
                       onPressed: () {
                         TUIKitWidePopup.showSecondaryConfirmDialog(
                             operationKey: TUIKitWideModalOperationKey.confirmDeleteMessages,
