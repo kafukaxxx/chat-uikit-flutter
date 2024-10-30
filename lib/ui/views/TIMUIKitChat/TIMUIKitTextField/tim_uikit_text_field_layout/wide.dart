@@ -35,6 +35,7 @@ import 'package:tencent_cloud_chat_uikit/ui/widgets/wide_popup.dart';
 import 'package:universal_html/html.dart' as html;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:uuid/uuid.dart';
+import 'package:wb_flutter_tool/wb_flutter_tool.dart' hide PlatformUtils;
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 
 class DesktopControlBarItem {
@@ -296,7 +297,7 @@ class _TIMUIKitTextFieldLayoutWideState extends TIMUIKitState<TIMUIKitTextFieldL
             ),
             Expanded(
               child: Text(
-                ": ${getAbstractMessage(repliedMessage)}",
+                ": ${AESTools.getLanguageText(AESTools.decryptString(getAbstractMessage(repliedMessage)))}",
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(

@@ -24,6 +24,7 @@ import 'package:tencent_cloud_chat_uikit/ui/views/TIMUIKitChat/TIMUIKItMessageLi
 import 'package:tencent_cloud_chat_uikit/ui/widgets/forward_message_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:path/path.dart' as path;
+import 'package:wb_flutter_tool/wb_flutter_tool.dart' hide PlatformUtils;
 
 class TIMUIKitMessageTooltip extends StatefulWidget {
   /// tool tips panel configuration, long press message will show tool tips panel
@@ -496,7 +497,9 @@ class TIMUIKitMessageTooltipState
         if (widget.message.elemType == MessageElemType.V2TIM_ELEM_TYPE_TEXT) {
           try {
             await Clipboard.setData(
-                ClipboardData(text: widget.message.textElem?.text ?? ""));
+                ClipboardData(text: AESTools.getLanguageText(
+                    AESTools.decryptString(
+                        widget.message.textElem?.text ?? ""))));
             onTIMCallback(TIMCallback(
                 type: TIMCallbackType.INFO,
                 infoRecommendText: TIM_t("已复制"),

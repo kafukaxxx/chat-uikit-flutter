@@ -8,6 +8,7 @@ import 'package:tencent_cloud_chat_uikit/ui/constants/time.dart';
 import 'package:collection/collection.dart';
 import 'package:tencent_cloud_chat_uikit/ui/utils/common_utils.dart';
 import 'package:tencent_cloud_chat_uikit/ui/utils/logger.dart';
+import 'package:wb_flutter_tool/wb_flutter_tool.dart';
 
 class MessageUtils {
   // 判断CallingData的方式和Trtc的方法一致
@@ -77,6 +78,7 @@ class MessageUtils {
         break;
       case GroupChangeInfoType.V2TIM_GROUP_INFO_CHANGE_TYPE_NOTIFICATION:
         s = TIM_t("群公告");
+        value = AESTools.decryptString(value ?? "");
         break;
       case GroupChangeInfoType.V2TIM_GROUP_INFO_CHANGE_TYPE_OWNER:
         s = TIM_t("群主");
@@ -286,7 +288,7 @@ class MessageUtils {
       case MessageElemType.V2TIM_ELEM_TYPE_SOUND:
         return TIM_t("[语音]");
       case MessageElemType.V2TIM_ELEM_TYPE_TEXT:
-        return message.textElem!.text as String;
+        return AESTools.getLanguageText(AESTools.decryptString(message.textElem!.text as String));
       case MessageElemType.V2TIM_ELEM_TYPE_FACE:
         return TIM_t("[表情]");
       case MessageElemType.V2TIM_ELEM_TYPE_FILE:

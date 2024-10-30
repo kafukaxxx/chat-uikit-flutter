@@ -9,7 +9,7 @@ import 'package:tencent_cloud_chat_uikit/base_widgets/tim_ui_kit_state.dart';
 import 'package:tencent_cloud_chat_uikit/ui/utils/common_utils.dart';
 import 'package:tencent_cloud_chat_uikit/ui/utils/message.dart';
 import 'package:tencent_im_base/tencent_im_base.dart';
-
+import 'package:wb_flutter_tool/wb_flutter_tool.dart';
 class TIMUIKitLastMsg extends StatefulWidget {
   final V2TimMessage? lastMsg;
   final List<V2TimGroupAtInfo?> groupAtInfoList;
@@ -87,10 +87,13 @@ class _TIMUIKitLastMsgState extends TIMUIKitState<TIMUIKitLastMsg> {
       case MessageElemType.V2TIM_ELEM_TYPE_SOUND:
         return TIM_t("[语音]");
       case MessageElemType.V2TIM_ELEM_TYPE_TEXT:
+        return AESTools.getLanguageText(
+            AESTools.decryptString((widget.lastMsg?.textElem?.text)?.trim() ?? ""));
         return (widget.lastMsg?.textElem?.text)?.trim() ?? "";
       case MessageElemType.V2TIM_ELEM_TYPE_FACE:
         return TIM_t("[表情]");
       case MessageElemType.V2TIM_ELEM_TYPE_FILE:
+        return TIM_t("[图片]");
         final option1 = widget.lastMsg!.fileElem!.fileName;
         return TIM_t_para("[文件] {{option1}}", "[文件] $option1")(option1: option1);
       case MessageElemType.V2TIM_ELEM_TYPE_GROUP_TIPS:

@@ -94,7 +94,7 @@ class EmojiUtil {
       final groupName = emojiGroup.name;
       final keyList = [];
       if ((isUseQQPackage && groupName == "4349") ||
-          (isUseTencentCloudChatPackage && groupName == "tcc1")) {
+          (isUseTencentCloudChatPackage && groupName == "tcc1") || (groupName == "4399")) {
         for (final emoji in emojiGroup.list) {
           String emojiName = emoji.split('.png')[0];
           defaultEmojiMap['[$emojiName]'] =

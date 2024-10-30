@@ -10,18 +10,20 @@ import 'package:tencent_im_base/tencent_im_base.dart';
 
 class GroupMemberSearchTextField extends TIMUIKitStatelessWidget {
   final Function(String text) onTextChange;
-  GroupMemberSearchTextField({Key? key, required this.onTextChange})
+  bool? isSearchAddUser;
+  GroupMemberSearchTextField({Key? key,this.isSearchAddUser = false, required this.onTextChange})
       : super(key: key);
-
+  TextEditingController _searchTfController = TextEditingController();
   @override
   Widget tuiBuild(BuildContext context, TUIKitBuildValue value) {
+    String? tfValue;
     final TUITheme theme = value.theme;
     final isDesktopScreen =
         TUIKitScreenUtils.getFormFactor(context) == DeviceType.Desktop;
     final FocusNode focusNode = FocusNode();
 
     var debounceFunc = OptimizeUtils.debounce(
-        (text) => onTextChange(text), const Duration(milliseconds: 300));
+            (text) => onTextChange(text), const Duration(milliseconds: 300));
 
     return Container(
       color: Colors.white,
@@ -38,16 +40,19 @@ class GroupMemberSearchTextField extends TIMUIKitStatelessWidget {
             ),
           ),
         ),
-        if(isDesktopScreen) TIMUIKitSearchInput(prefixIcon: Icon(
-          Icons.search,
-          size: 16,
-          color: hexToColor("979797"),
-        ),
-          onChange: (text){
-          focusNode.requestFocus();
-            debounceFunc(text);
-          }, focusNode: focusNode,
-        ),
+        if(isDesktopScreen)
+          TIMUIKitSearchInput(
+            prefixIcon: Icon(
+              Icons.search,
+              size: 16,
+              color: hexToColor("979797"),
+            ),
+            onChange: (text) {
+              focusNode.requestFocus();
+              debounceFunc(text);
+            },
+            focusNode: focusNode,
+          ),
         Divider(
             thickness: 1,
             indent: 74,

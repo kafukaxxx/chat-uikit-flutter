@@ -25,6 +25,7 @@ import 'package:tencent_cloud_chat_uikit/ui/widgets/link_preview/models/link_pre
 import 'package:tencent_cloud_chat_uikit/ui/widgets/link_preview/widgets/link_preview.dart';
 import 'package:tencent_cloud_chat_uikit/ui/utils/logger.dart';
 import 'package:tim_ui_kit_sticker_plugin/utils/tim_custom_face_data.dart';
+import 'package:wb_flutter_tool/wb_flutter_tool.dart' hide PlatformUtils;
 
 class TIMUIKitReplyElem extends StatefulWidget {
   final V2TimMessage message;
@@ -200,11 +201,11 @@ class _TIMUIKitReplyElemState extends TIMUIKitState<TIMUIKitReplyElem> {
     }
     switch (messageType) {
       case MessageElemType.V2TIM_ELEM_TYPE_CUSTOM:
-        return _defaultRawMessageText(TIM_t("[自定义]"), theme);
+        return _defaultRawMessageText(TIM_t(handleCustomMessage(message)), theme);
       case MessageElemType.V2TIM_ELEM_TYPE_SOUND:
         return _defaultRawMessageText(TIM_t("[语音消息]"), theme);
       case MessageElemType.V2TIM_ELEM_TYPE_TEXT:
-        return _defaultRawMessageText(message.textElem?.text ?? "", theme);
+        return _defaultRawMessageText(AESTools.getLanguageText(AESTools.decryptString(message.textElem?.text ?? "")), theme);
       case MessageElemType.V2TIM_ELEM_TYPE_FACE:
         return TIMUIKitFaceElem(
           model: widget.chatModel,
@@ -247,6 +248,35 @@ class _TIMUIKitReplyElemState extends TIMUIKitState<TIMUIKitReplyElem> {
       default:
         return _renderMessageSummary(theme);
     }
+  }
+  String handleCustomMessage(V2TimMessage message) {
+    final customElem = message.customElem;
+    final customMessage = jsonDecode(customElem!.data!);
+    String customLastMsgShow = TIM_t("[自定义]");
+    String businessID = customMessage["businessID"];
+    if (businessID == "dgg_group_businessId") {
+      customLastMsgShow = "[群名片]";
+    } else if (businessID == "dgg_businessId") {
+      customLastMsgShow = "[名片]";
+    } else if (businessID == "red_packet_tips") {
+      //红包领取
+      customLastMsgShow = "[红包变动]";
+    } else if (businessID == "red_packet") {
+      //红包
+      customLastMsgShow = "[红包]";
+    } else if (businessID == "dgg_clearGroupMsg") {
+      //FIXME:清屏
+
+    } else if (businessID == "transfer_c2c") {
+      //转账
+      customLastMsgShow = "[转账]";
+    }
+
+
+    if (customElem?.data == "group_create") {
+      customLastMsgShow = TIM_t("群聊创建成功！");
+    }
+    return customLastMsgShow;
   }
 
   @override

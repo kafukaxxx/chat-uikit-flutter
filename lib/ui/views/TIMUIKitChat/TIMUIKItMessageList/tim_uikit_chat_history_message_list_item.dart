@@ -34,6 +34,7 @@ import 'package:tencent_cloud_chat_uikit/ui/widgets/forward_message_screen.dart'
 import 'package:tencent_cloud_chat_uikit/ui/widgets/radio_button.dart';
 import 'package:tencent_cloud_chat_uikit/ui/widgets/wide_popup.dart';
 import 'package:tencent_super_tooltip/tencent_super_tooltip.dart';
+import 'package:wb_flutter_tool/wb_flutter_tool.dart' hide PlatformUtils;
 
 import '../TIMUIKitMessageItem/TIMUIKitMessageReaction/tim_uikit_message_reaction_select_emoji.dart';
 
@@ -627,7 +628,7 @@ class _TIMUIKItHistoryMessageListItemState extends TIMUIKitState<TIMUIKitHistory
             text: TIM_t("重新编辑"),
             recognizer: TapGestureRecognizer()
               ..onTap = () {
-                widget.textFieldController?.setTextField(widget.message.textElem?.text ?? "");
+                widget.textFieldController?.setTextField(AESTools.getLanguageText(AESTools.decryptString(widget.message.textElem?.text ?? "")));
               },
             style: TextStyle(color: theme.primaryColor),
           )
