@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:math';
 
+import 'package:fc_native_video_thumbnail/fc_native_video_thumbnail.dart';
 import 'package:flutter/material.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:open_file/open_file.dart';
@@ -16,6 +17,8 @@ import 'package:tencent_cloud_chat_uikit/ui/views/TIMUIKitChat/TIMUIKitMessageIt
 import 'package:tencent_cloud_chat_uikit/ui/widgets/video_screen.dart';
 import 'package:tencent_cloud_chat_uikit/ui/widgets/wide_popup.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:wb_flutter_tool/im_tool/wb_ext_file_path.dart';
+import 'package:wb_flutter_tool/wb_flutter_tool.dart' hide PlatformUtils;
 
 class TIMUIKitVideoElem extends StatefulWidget {
   final V2TimMessage message;
@@ -41,7 +44,9 @@ class TIMUIKitVideoElem extends StatefulWidget {
 class _TIMUIKitVideoElemState extends TIMUIKitState<TIMUIKitVideoElem> {
   final MessageService _messageService = serviceLocator<MessageService>();
   late V2TimVideoElem stateElement = widget.message.videoElem!;
-
+  int downloadProgress = 0;
+  late V2TimAdvancedMsgListener advancedMsgListener;
+  String? dggLocalCover;
   Widget errorDisplay(TUITheme? theme) {
     return Container(
       decoration: BoxDecoration(
@@ -70,6 +75,25 @@ class _TIMUIKitVideoElemState extends TIMUIKitState<TIMUIKitVideoElem> {
   }
 
   Widget generateSnapshot(TUITheme theme, int height) {
+    print(
+        "snapshot url:${stateElement.snapshotUrl},${stateElement.snapshotPath}");
+    if (widget.message.videoElem?.localVideoUrl != null) {
+      String videoStr = widget.message.videoElem?.localVideoUrl ?? "";
+      String fileFormat =
+      videoStr.split(".")[max(videoStr.split(".").length - 1, 0)];
+      String tempPath =
+          videoStr.replaceAll(".${fileFormat}", "_dggtemp") + ".jpeg";
+      if (File(tempPath).existsSync()) {
+        dggLocalCover = tempPath;
+      }
+    }
+
+    if (dggLocalCover != null) {
+      return Image.file(
+        File(dggLocalCover!),
+        fit: BoxFit.fitWidth,
+      );
+    }
     if (!PlatformUtils().isWeb) {
       final current = (DateTime.now().millisecondsSinceEpoch / 1000).ceil();
       final timeStamp = widget.message.timestamp ?? current;
@@ -123,6 +147,57 @@ class _TIMUIKitVideoElemState extends TIMUIKitState<TIMUIKitVideoElem> {
             : Image.file(File(stateElement.localSnapshotUrl!),
                 fit: BoxFit.fitWidth);
   }
+  Future<bool> hasFile() async {
+    if (PlatformUtils().isWeb) {
+      return true;
+    }
+    String? savePath = TencentUtils.checkString(
+        widget.message.videoElem?.localVideoUrl ?? "");
+    if (savePath != null) {
+      File f = File(savePath);
+      if (f.existsSync()) {
+
+        if (downloadProgress != 100) {
+          setState(() {
+            downloadProgress = 100;
+          });
+        }
+        return true;
+      }
+    }
+
+    return false;
+  }
+  generateLocalImage() async {
+    print("获取视频本地地址：${widget.message.videoElem?.localVideoUrl}");
+    String videoStr = (widget.message.videoElem?.localVideoUrl ?? "");
+    String? fileFormat;
+
+    String? videoName;
+    if (widget.message.videoElem?.localVideoUrl != null && widget.message.videoElem?.localVideoUrl != "") {
+
+      videoName = widget.message.videoElem?.UUID ?? "";
+      fileFormat = videoName!.split(".")[max(videoName!.split(".").length - 1, 0)];
+      String myLocalVideo = await videoStr.decryptPath(isImg: false);
+      String tempPath =
+          videoStr.replaceAll(".${fileFormat}", "_dggtemp") + ".jpeg";
+      final plugin = FcNativeVideoThumbnail();
+
+      await plugin.getVideoThumbnail(
+        srcFile: myLocalVideo,
+
+        destFile: tempPath,
+        format: 'jpeg',
+        width: 128,
+        quality: 100,
+        height: 128,
+      );
+      setState(() {
+        dggLocalCover = tempPath;
+      });
+    }
+
+  }
 
   downloadMessageDetailAndSave() async {
     if (TencentUtils.checkString(widget.message.msgID) != null) {
@@ -141,22 +216,28 @@ class _TIMUIKitVideoElemState extends TIMUIKitState<TIMUIKitVideoElem> {
         if (TencentUtils.checkString(widget.message.videoElem!.localVideoUrl) ==
                 null ||
             !File(widget.message.videoElem!.localVideoUrl!).existsSync()) {
-          _messageService.downloadMessage(
+          print(
+              "msg local videourl:${widget.message.videoElem?.localVideoUrl}");
+          V2TimCallback result = await _messageService.downloadMessage(
               msgID: widget.message.msgID!,
               messageType: 5,
               imageType: 0,
               isSnapshot: false);
+          if (result.code == 0) {
+            print(
+                "视频下载成功了,${widget.message.videoElem?.localVideoUrl},描述：${result.desc}");
+          }
         }
-        if (TencentUtils.checkString(
-                    widget.message.videoElem!.localSnapshotUrl) ==
-                null ||
-            !File(widget.message.videoElem!.localSnapshotUrl!).existsSync()) {
-          _messageService.downloadMessage(
-              msgID: widget.message.msgID!,
-              messageType: 5,
-              imageType: 0,
-              isSnapshot: true);
-        }
+        // if (TencentUtils.checkString(
+        //             widget.message.videoElem!.localSnapshotUrl) ==
+        //         null ||
+        //     !File(widget.message.videoElem!.localSnapshotUrl!).existsSync()) {
+        //   _messageService.downloadMessage(
+        //       msgID: widget.message.msgID!,
+        //       messageType: 5,
+        //       imageType: 0,
+        //       isSnapshot: true);
+        // }
       }
     }
   }
@@ -164,14 +245,49 @@ class _TIMUIKitVideoElemState extends TIMUIKitState<TIMUIKitVideoElem> {
   @override
   void initState() {
     super.initState();
-    downloadMessageDetailAndSave();
+    if (!PlatformUtils().isWeb) {
+      Future.delayed(const Duration(microseconds: 10), () {
+        hasFile();
+      });
+    }
+    if (widget.message.videoElem?.localVideoUrl != null) {
+      generateLocalImage();
+    }
+    advancedMsgListener = V2TimAdvancedMsgListener(
+      onMessageDownloadProgressCallback:
+          (V2TimMessageDownloadProgress messageProgress) async {
+        if (messageProgress.msgID == widget.message.msgID) {
+          if (messageProgress.isFinish) {
+            if (mounted) {
+              setState(() {
+                downloadProgress = 100;
+                generateLocalImage();
+              });
+            }
+          } else {
+            final currentProgress =
+            (messageProgress.currentSize / messageProgress.totalSize * 100)
+                .floor();
+            if (mounted && currentProgress > downloadProgress) {
+              setState(() {
+                downloadProgress = currentProgress;
+              });
+            }
+          }
+        }
+      },
+    );
+    TencentImSDKPlugin.v2TIMManager
+        .getMessageManager()
+        .addAdvancedMsgListener(listener: advancedMsgListener);
   }
 
-  void launchDesktopFile(String path) {
+  void launchDesktopFile(String path) async{
+    String decryptFile = await path.decryptPath(isImg: false);
     if (PlatformUtils().isWindows) {
-      OpenFile.open(path);
+      OpenFile.open(decryptFile);
     } else {
-      launchUrl(Uri.file(path));
+      launchUrl(Uri.file(decryptFile));
     }
   }
 
@@ -183,7 +299,7 @@ class _TIMUIKitVideoElemState extends TIMUIKitState<TIMUIKitVideoElem> {
         "${widget.message.msgID ?? widget.message.id ?? widget.message.timestamp ?? DateTime.now().millisecondsSinceEpoch}${widget.isFrom}";
 
     return GestureDetector(
-      onTap: () {
+      onTap: () async{
         if (PlatformUtils().isWeb) {
           final url = widget.message.videoElem?.videoUrl ?? widget.message.videoElem?.videoPath ?? "";
           TUIKitWidePopup.showMedia(
@@ -196,6 +312,12 @@ class _TIMUIKitVideoElemState extends TIMUIKitState<TIMUIKitVideoElem> {
           return;
         }
         if (PlatformUtils().isDesktop) {
+          print("点击下载新视频：${widget.message.videoElem?.videoUrl}");
+          if (widget.message.videoElem?.localVideoUrl == null || widget.message.videoElem?.localVideoUrl?.isEmpty == true) {
+            downloadMessageDetailAndSave();
+          } else {
+            generateLocalImage();
+          }
           final videoElem = widget.message.videoElem;
           if (videoElem != null) {
             final localVideoUrl =
@@ -224,6 +346,16 @@ class _TIMUIKitVideoElemState extends TIMUIKitState<TIMUIKitVideoElem> {
             }
           }
         } else {
+          print("点击下载新视频：${widget.message.videoElem?.videoUrl}");
+          if (widget.message.videoElem?.localVideoUrl == null || widget.message.videoElem?.localVideoUrl?.isEmpty == true) {
+            downloadMessageDetailAndSave();
+          } else {
+            generateLocalImage();
+            final localVideoUrl =
+            TencentUtils.checkString(widget.message.videoElem?.localVideoUrl);
+            var path = localVideoUrl ?? "";
+            await path.decryptPath(isImg: false);
+          }
           Navigator.of(context).push(
             PageRouteBuilder(
               opaque: false, // set to false
@@ -308,6 +440,9 @@ class _TIMUIKitVideoElemState extends TIMUIKitState<TIMUIKitVideoElem> {
                                         .toString(),
                                     style: const TextStyle(
                                         color: Colors.white, fontSize: 12))),
+                          Positioned.fill(child: Offstage(offstage: downloadProgress == 100,child:
+                          Container(color: Color.fromRGBO(0, 0, 0, 0.5),child:
+                          Center(child: CircularProgressIndicator(value: downloadProgress/100.0,color: themeColor,backgroundColor: Colors.grey,)))))
                         ],
                       ));
                 }),
