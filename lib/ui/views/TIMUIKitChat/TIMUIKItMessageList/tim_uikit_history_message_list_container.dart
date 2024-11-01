@@ -194,6 +194,7 @@ class _TIMUIKitHistoryMessageListContainerState
                 showAvatar: chatConfig.isShowAvatar,
                 onSecondaryTapForOthersPortrait: widget.onSecondaryTapAvatar,
                 onTapForOthersPortrait: widget.onTapAvatar,
+                onRightMouseClickPortrait: widget.onMouseRightClickAvatar,
                 messageItemBuilder: widget.messageItemBuilder,
                 onLongPressForOthersHeadPortrait:
                     widget.onLongPressForOthersHeadPortrait,
