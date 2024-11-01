@@ -42,32 +42,32 @@ class GroupProfileType extends TIMUIKitStatelessWidget {
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-      decoration: BoxDecoration(
-          color: Colors.white,
-          border: isDesktopScreen
-              ? null
-              : Border(
-                  bottom: BorderSide(
-                      color: theme.weakDividerColor ??
-                          CommonColor.weakDividerColor))),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            TIM_t("群类型"),
-            style: TextStyle(
-                fontSize: isDesktopScreen ? 14 : 16,
-                color: theme.darkTextColor),
-          ),
-          Text(
-            groupType,
-            style: TextStyle(
-                fontSize: isDesktopScreen ? 14 : 16,
-                color: theme.weakTextColor),
-          )
-        ],
-      ),
+      // padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+      // decoration: BoxDecoration(
+      //     color: Colors.white,
+      //     border: isDesktopScreen
+      //         ? null
+      //         : Border(
+      //             bottom: BorderSide(
+      //                 color: theme.weakDividerColor ??
+      //                     CommonColor.weakDividerColor))),
+      // child: Row(
+      //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      //   children: [
+      //     Text(
+      //       TIM_t("群类型"),
+      //       style: TextStyle(
+      //           fontSize: isDesktopScreen ? 14 : 16,
+      //           color: theme.darkTextColor),
+      //     ),
+      //     Text(
+      //       groupType,
+      //       style: TextStyle(
+      //           fontSize: isDesktopScreen ? 14 : 16,
+      //           color: theme.weakTextColor),
+      //     )
+      //   ],
+      // ),
     );
   }
 }

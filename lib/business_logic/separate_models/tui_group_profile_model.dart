@@ -10,6 +10,7 @@ import 'package:tencent_cloud_chat_uikit/data_services/message/message_services.
 import 'package:tencent_cloud_chat_uikit/data_services/services_locatar.dart';
 import 'package:tencent_cloud_chat_uikit/ui/utils/logger.dart';
 import 'package:tencent_im_base/tencent_im_base.dart';
+import 'package:wb_flutter_tool/wb_flutter_tool.dart';
 
 class TUIGroupProfileModel extends ChangeNotifier {
   final CoreServicesImpl _coreServices = serviceLocator<CoreServicesImpl>();
@@ -25,6 +26,7 @@ class TUIGroupProfileModel extends ChangeNotifier {
   List<V2TimGroupMemberFullInfo?>? _groupMemberList;
   String _groupMemberListSeq = "0";
   V2TimGroupInfo? _groupInfo;
+  String? beinvitemode; ////被邀请人同意方式，0表示需要同意，1表示不需要同意 2禁止邀请
   Function(String userID, TapDownDetails? tapDetails)? onClickUser;
 
   GroupProfileLifeCycle? get lifeCycle => _lifeCycle;
@@ -63,14 +65,23 @@ class TUIGroupProfileModel extends ChangeNotifier {
     _groupInfo = value;
   }
 
-  void loadData(String groupID) {
+  void loadData(String groupID) async{
     _groupID = groupID;
-    loadGroupInfo(groupID);
-    loadGroupMemberList(groupID: groupID);
-    _loadConversation();
-    _loadContactList();
-  }
 
+    await loadGroupInfo(groupID);
+    dggLoadInfo();
+    await _loadContactList();
+    await loadGroupMemberList(groupID: groupID);
+    await _loadConversation();
+
+  }
+  dggLoadInfo() async {
+    var resp = await WBsyncHttpRequest().post(WBApi.getGroupInfo,data: {"team_id":_groupID});
+    if (resp.code == 200) {
+      beinvitemode = resp.data["beinvitemode"].toString();
+      notifyListeners();
+    }
+  }
   loadGroupInfo(String groupID) async {
     final groupInfo = await _groupServices.getGroupsInfo(groupIDList: [groupID]);
     if (groupInfo != null) {
@@ -135,6 +146,24 @@ class TUIGroupProfileModel extends ChangeNotifier {
 
     if (res.code == 0) {}
     return res;
+  }
+  Future<V2TimCallback?> setGroupAvatar(String avatar) async {
+    if (_groupInfo != null) {
+      String? originalAvatar = _groupInfo?.faceUrl;
+      _groupInfo?.faceUrl = avatar;
+      final response = await _groupServices.setGroupInfo(
+          info: V2TimGroupInfo.fromJson({
+            "groupID": _groupID,
+            "groupType": _groupInfo!.groupType,
+            "faceUrl": avatar
+          }));
+      if (response.code != 0) {
+        _groupInfo?.faceUrl = originalAvatar;
+      }
+      notifyListeners();
+      return response;
+    }
+    return null;
   }
 
   Future<V2TimCallback?> setGroupName(String groupName) async {
@@ -235,7 +264,7 @@ class TUIGroupProfileModel extends ChangeNotifier {
 
   bool canInviteMember() {
     final groupType = _groupInfo?.groupType;
-    return groupType == GroupType.Work || groupType == "Private";
+    return groupType == GroupType.Public;
   }
 
   bool canKickOffMember() {

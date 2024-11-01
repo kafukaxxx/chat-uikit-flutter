@@ -62,7 +62,7 @@ class TIMUIKitChat extends StatefulWidget {
 
   /// Avatar and name in message reaction tap callback.
   final void Function(String userID, TapDownDetails tapDetails)? onTapAvatar;
-
+  final void Function(String userID, TapDownDetails tapDetails)? onMouseRightClickAvatar;
   /// Avatar and name in message reaction secondary tap callback.
   final void Function(String userID, TapDownDetails tapDetails)? onSecondaryTapAvatar;
 
@@ -172,6 +172,7 @@ class TIMUIKitChat extends StatefulWidget {
       this.conversationShowName,
       this.abstractMessageBuilder,
       this.onTapAvatar,
+        this.onMouseRightClickAvatar,
       @Deprecated("Nickname will not show in one-to-one chat, if you tend to control it in group chat, please use `isShowSelfNameInGroup` and `isShowOthersNameInGroup` from `config: TIMUIKitChatConfig` instead") this.showNickName = false,
       this.showTotalUnReadCount = false,
       this.messageItemBuilder,
@@ -496,6 +497,9 @@ class _TUIChatState extends TIMUIKitState<TIMUIKitChat> {
                                     scrollController: autoController,
                                     onSecondaryTapAvatar: widget.onSecondaryTapAvatar,
                                     onTapAvatar: widget.onTapAvatar,
+                                    onMouseRightClickAvatar: ((userID, tapDetails) {
+                                      model.onRightClickUser(userID, tapDetails, context);
+                                    }),
                                     // ignore: deprecated_member_use_from_same_package
                                     showNickName: widget.showNickName,
                                     messageItemBuilder: widget.messageItemBuilder,

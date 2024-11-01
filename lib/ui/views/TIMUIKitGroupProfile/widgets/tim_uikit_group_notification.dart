@@ -6,6 +6,7 @@ import 'package:tencent_im_base/tencent_im_base.dart';
 import 'package:tencent_cloud_chat_uikit/business_logic/separate_models/tui_group_profile_model.dart';
 
 import 'package:tencent_cloud_chat_uikit/base_widgets/tim_ui_kit_base.dart';
+import 'package:wb_flutter_tool/wb_flutter_tool.dart';
 
 class GroupProfileNotification extends StatefulWidget {
   final bool isHavePermission;
@@ -40,7 +41,7 @@ class GroupProfileNotificationState
         isShowEditBox = false;
       });
       final notification = _controller.text;
-      await model.setGroupNotification(notification);
+      await model.setGroupNotification(AESTools.encryptString(notification));
     }
 
     return Container(
@@ -69,7 +70,7 @@ class GroupProfileNotificationState
                   setState(() {
                     isShowEditBox = !isShowEditBox;
                     if (isShowEditBox) {
-                      _controller.text = notification;
+                      _controller.text = AESTools.decryptString(notification);
                     }
                   });
                 }
@@ -101,7 +102,7 @@ class GroupProfileNotificationState
             if (!isShowEditBox)
               Padding(
                 padding: EdgeInsets.only(top: isDesktopScreen ? 4 : 0),
-                child: SelectableText(notification,
+                child: SelectableText(AESTools.decryptString(notification),
                     // overflow: isDesktopScreen ? null : TextOverflow.ellipsis,
                     // softWrap: true,
                     style: TextStyle(color: theme.weakTextColor, fontSize: 12)),

@@ -1,6 +1,7 @@
 
 import 'package:azlistview_all_platforms/azlistview_all_platforms.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:lpinyin/lpinyin.dart';
 import 'package:tencent_cloud_chat_uikit/ui/utils/screen_utils.dart';
 import 'package:tencent_im_base/tencent_im_base.dart';
@@ -12,6 +13,8 @@ import 'package:tencent_cloud_chat_uikit/ui/widgets/avatar.dart';
 import 'package:tencent_cloud_chat_uikit/ui/widgets/az_list_view.dart';
 import 'package:tencent_cloud_chat_uikit/ui/widgets/radio_button.dart';
 import 'package:tencent_cloud_chat_uikit/base_widgets/tim_ui_kit_base.dart';
+
+import '../views/TIMUIKitGroupProfile/widgets/tim_ui_group_member_search.dart';
 
 class ContactList extends StatefulWidget {
   final List<V2TimFriendInfo> contactList;
@@ -42,6 +45,8 @@ class ContactList extends StatefulWidget {
   final Widget Function(BuildContext context)? emptyBuilder;
 
   final String? currentItem;
+  final bool? canSelectAll;
+  final bool? showNotInGroup;
 
   const ContactList({
     Key? key,
@@ -51,6 +56,7 @@ class ContactList extends StatefulWidget {
     this.isCanSlidableDelete = false,
     this.handleSlidableDelte,
     this.onTapItem,
+    this.showNotInGroup,
     this.bgColor,
     this.topList,
     this.topListItemBuilder,
@@ -59,6 +65,7 @@ class ContactList extends StatefulWidget {
     this.groupMemberList,
     this.emptyBuilder,
     this.currentItem,
+    this.canSelectAll = false,
   }) : super(key: key);
 
   @override
@@ -67,6 +74,8 @@ class ContactList extends StatefulWidget {
 
 class _ContactListState extends TIMUIKitState<ContactList> {
   List<V2TimFriendInfo> selectedMember = [];
+  List<ISuspensionBeanImpl> searchResults = [];
+  String? searchKey;
   final TUIFriendShipViewModel friendShipViewModel =
       serviceLocator<TUIFriendShipViewModel>();
 
@@ -82,13 +91,71 @@ class _ContactListState extends TIMUIKitState<ContactList> {
     final List<ISuspensionBeanImpl> showList = List.empty(growable: true);
     for (var i = 0; i < memberList.length; i++) {
       final item = memberList[i];
-      final showName = _getShowName(item);
-      String pinyin = PinyinHelper.getPinyinE(showName);
-      String tag = pinyin.substring(0, 1).toUpperCase();
-      if (RegExp("[A-Z]").hasMatch(tag)) {
-        showList.add(ISuspensionBeanImpl(memberInfo: item, tagIndex: tag));
+      String showName = _getShowName(item);
+      if (searchKey?.isNotEmpty == true) {
+        if (showName.contains(searchKey!)) {
+          if (widget.showNotInGroup == true) {
+            if (widget.groupMemberList != null &&
+                widget.groupMemberList!.isNotEmpty) {
+              var isExist = ((widget.groupMemberList?.indexWhere(
+                      (element) => element?.userID == item.userID)) ??
+                  -1) >
+                  -1;
+              if (isExist == false) {
+                String pinyin = PinyinHelper.getPinyinE(showName);
+                String tag = pinyin.substring(0, 1).toUpperCase();
+                if (RegExp("[A-Z]").hasMatch(tag)) {
+                  showList.add(
+                      ISuspensionBeanImpl(memberInfo: item, tagIndex: tag));
+                } else {
+                  showList.add(
+                      ISuspensionBeanImpl(memberInfo: item, tagIndex: "#"));
+                }
+              }
+            }
+          } else {
+            String pinyin = PinyinHelper.getPinyinE(showName);
+            String tag = pinyin.substring(0, 1).toUpperCase();
+            if (RegExp("[A-Z]").hasMatch(tag)) {
+              showList
+                  .add(ISuspensionBeanImpl(memberInfo: item, tagIndex: tag));
+            } else {
+              showList
+                  .add(ISuspensionBeanImpl(memberInfo: item, tagIndex: "#"));
+            }
+          }
+        }
       } else {
-        showList.add(ISuspensionBeanImpl(memberInfo: item, tagIndex: "#"));
+        if (widget.showNotInGroup == true) {
+          if (widget.groupMemberList != null &&
+              widget.groupMemberList!.isNotEmpty) {
+            var isExist = ((widget.groupMemberList?.indexWhere(
+                    (element) => element?.userID == item.userID)) ??
+                -1) >
+                -1;
+            if (isExist == false) {
+              String pinyin = PinyinHelper.getPinyinE(showName);
+              String tag = pinyin.substring(0, 1).toUpperCase();
+              if (RegExp("[A-Z]").hasMatch(tag)) {
+                showList.add(
+                    ISuspensionBeanImpl(memberInfo: item, tagIndex: tag));
+              } else {
+                showList.add(
+                    ISuspensionBeanImpl(memberInfo: item, tagIndex: "#"));
+              }
+            }
+          }
+        } else {
+          String pinyin = PinyinHelper.getPinyinE(showName);
+          String tag = pinyin.substring(0, 1).toUpperCase();
+          if (RegExp("[A-Z]").hasMatch(tag)) {
+            showList
+                .add(ISuspensionBeanImpl(memberInfo: item, tagIndex: tag));
+          } else {
+            showList
+                .add(ISuspensionBeanImpl(memberInfo: item, tagIndex: "#"));
+          }
+        }
       }
     }
 
@@ -143,7 +210,8 @@ class _ContactListState extends TIMUIKitState<ContactList> {
                 onChanged: (isChecked) {
                   if (isChecked) {
                     if (selectedMemberIsOverFlow()) {
-                      selectedMember = [item];
+                      // selectedMember = [item];
+                      EasyLoading.showInfo('最多只能选择${widget.maxSelectNum}');
                       setState(() {});
                       return;
                     }
@@ -245,20 +313,20 @@ class _ContactListState extends TIMUIKitState<ContactList> {
   Widget tuiBuild(BuildContext context, TUIKitBuildValue value) {
     final TUITheme theme = value.theme;
 
-    final showList = _getShowList(widget.contactList);
+    searchResults = _getShowList(widget.contactList);
     final isDesktopScreen = TUIKitScreenUtils.getFormFactor(context) == DeviceType.Desktop;
 
     if (widget.topList != null && widget.topList!.isNotEmpty) {
       final topList = widget.topList!
           .map((e) => ISuspensionBeanImpl(memberInfo: e, tagIndex: '@'))
           .toList();
-      showList.insertAll(0, topList);
+      searchResults.insertAll(0, topList);
     }
 
     if (widget.contactList.isEmpty) {
       return Column(
         children: [
-          ...showList.map((e) => generateTopItem(e.memberInfo)).toList(),
+          ...searchResults.map((e) => generateTopItem(e.memberInfo)).toList(),
           Expanded(
               child: widget.emptyBuilder != null
                   ? widget.emptyBuilder!(context)
@@ -267,47 +335,84 @@ class _ContactListState extends TIMUIKitState<ContactList> {
       );
     }
 
-    return AZListViewContainer(
-      memberList: showList,
-      itemBuilder: (context, index) {
-        final memberInfo = showList[index].memberInfo;
-        if (memberInfo is TopListItem) {
-          return generateTopItem(memberInfo);
-        } else {
-          return Material(
-            color: (isDesktopScreen)
-                ? (widget.currentItem == memberInfo.userProfile.userID
+    return Stack(
+      children: [
+        Positioned(left: 0,height: 65,right: 0,child: GroupMemberSearchTextField(isSearchAddUser: true,onTextChange: (str){
+          searchKey = str;
+          setState(() {
+            searchResults = _getShowList(widget.contactList);
+          });
+        },)),
+        if (widget.canSelectAll == true) Positioned(left: 0,height:50,top: 65,child: Row(
+          children: [
+            Text("全选"),
+            SizedBox(width: 4,),
+            CheckBoxButton(isChecked: selectedMember.length == widget.contactList.length,onChanged: (check){
+              if (check) {
+                for (var item in searchResults) {
+                  V2TimFriendInfo items = item.memberInfo;
+                  selectedMember.add(items);
+                }
+
+
+              }else {
+
+                selectedMember.clear();
+
+              }
+              if (widget.onSelectedMemberItemChange != null) {
+                widget.onSelectedMemberItemChange!(selectedMember);
+              }
+              setState(() {});
+
+            },)
+          ],
+        )
+        ),
+        Positioned(top: (widget.canSelectAll == true) ?115:65,left: 0,right: 0,bottom: 0,child: AZListViewContainer(
+          memberList: searchResults,
+          itemBuilder: (context, index) {
+            final memberInfo = searchResults[index].memberInfo;
+            if (memberInfo is TopListItem) {
+              return generateTopItem(memberInfo);
+            } else {
+              return Material(
+                color: (isDesktopScreen)
+                    ? (widget.currentItem == memberInfo.userProfile.userID
                     ? theme.conversationItemChooseBgColor
                     : widget.bgColor)
-                : null,
-            child: InkWell(
-              onTap: () {
-                if (widget.isCanSelectMemberItem) {
-                  if (selectedMember.contains(memberInfo)) {
-                    selectedMember.remove(memberInfo);
-                  } else {
-                    if (selectedMemberIsOverFlow()) {
-                      selectedMember = [memberInfo];
+                    : null,
+                child: InkWell(
+                  onTap: () {
+                    if (widget.isCanSelectMemberItem) {
+                      if (selectedMember.contains(memberInfo)) {
+                        selectedMember.remove(memberInfo);
+                      } else {
+                        if (selectedMemberIsOverFlow()) {
+                          // selectedMember = [memberInfo];
+                          EasyLoading.showInfo('最多只能选择${widget.maxSelectNum}');
+                          setState(() {});
+                          return;
+                        }
+                        selectedMember.add(memberInfo);
+                      }
+                      if (widget.onSelectedMemberItemChange != null) {
+                        widget.onSelectedMemberItemChange!(selectedMember);
+                      }
                       setState(() {});
                       return;
                     }
-                    selectedMember.add(memberInfo);
-                  }
-                  if (widget.onSelectedMemberItemChange != null) {
-                    widget.onSelectedMemberItemChange!(selectedMember);
-                  }
-                  setState(() {});
-                  return;
-                }
-                if (widget.onTapItem != null) {
-                  widget.onTapItem!(memberInfo);
-                }
-              },
-              child: _buildItem(theme, memberInfo),
-            ),
-          );
-        }
-      },
+                    if (widget.onTapItem != null) {
+                      widget.onTapItem!(memberInfo);
+                    }
+                  },
+                  child: _buildItem(theme, memberInfo),
+                ),
+              );
+            }
+          },
+        )),
+      ],
     );
   }
 }

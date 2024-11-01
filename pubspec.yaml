@@ -77,6 +77,7 @@ dependencies:
   markdown: ^7.1.0
   logger: ^2.0.1
   image_clipboard: ^1.0.0+2
+  flutter_easyloading: ^3.0.3
   wb_flutter_tool:
     path:  ../../wb_flutter_tool
 

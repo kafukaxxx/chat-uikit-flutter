@@ -10,6 +10,7 @@ import 'package:tencent_cloud_chat_uikit/business_logic/separate_models/tui_grou
 import 'package:tencent_cloud_chat_uikit/data_services/core/tim_uikit_wide_modal_operation_key.dart';
 import 'package:tencent_cloud_chat_uikit/data_services/services_locatar.dart';
 import 'package:tencent_cloud_chat_uikit/ui/utils/screen_utils.dart';
+import 'package:tencent_cloud_chat_uikit/ui/views/TIMUIKitGroupProfile/widgets/tim_ui_group_member_search.dart';
 import 'package:tencent_cloud_chat_uikit/ui/views/TIMUIKitProfile/widget/tim_uikit_operation_item.dart';
 import 'package:tencent_cloud_chat_uikit/ui/widgets/avatar.dart';
 import 'package:tencent_cloud_chat_uikit/ui/widgets/column_menu.dart';
@@ -638,7 +639,13 @@ class GroupProfileAddAdmin extends StatefulWidget {
 
 class _GroupProfileAddAdminState extends TIMUIKitState<GroupProfileAddAdmin> {
   List<V2TimGroupMemberFullInfo?> selectedMemberList = [];
-
+  List<V2TimGroupMemberFullInfo?> searchMemberList = [];
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    searchMemberList = List.from(widget.memberList);
+  }
   void onSubmit() {
     if (widget.selectCompletedHandler != null) {
       widget.selectCompletedHandler!(context, selectedMemberList);
@@ -650,22 +657,59 @@ class _GroupProfileAddAdminState extends TIMUIKitState<GroupProfileAddAdmin> {
     final TUITheme theme = value.theme;
 
     Widget addAdminPage() {
-      return SingleChildScrollView(
-          child: Column(
-        children: [
-          Container(
-            alignment: Alignment.topLeft,
-            color: theme.weakDividerColor,
-            padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
-            child: Text(
-              TIM_t("群成员"),
-              style: TextStyle(fontSize: 14, color: theme.weakTextColor),
-            ),
-          ),
-          ...widget.memberList
-              .map((e) => Container(
-                    decoration: BoxDecoration(color: Colors.white, border: Border(bottom: BorderSide(color: theme.weakDividerColor ?? CommonColor.weakDividerColor))),
-                    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+      return Stack(children: [
+        Positioned(child: GroupMemberSearchTextField(
+          onTextChange: (str) {
+            if (str.isEmpty) {
+              setState(() {
+                searchMemberList = List.from(widget.memberList);
+              });
+            } else {
+              searchMemberList.clear();
+              print("widgetlist:${widget.memberList}");
+              List<V2TimGroupMemberFullInfo?> tempArr = [];
+              for (V2TimGroupMemberFullInfo? info in widget.memberList) {
+                if (info?.nickName?.contains(str) == true) {
+                  tempArr.add(info);
+                }
+              }
+              setState(() {
+                searchMemberList = tempArr;
+              });
+            }
+          },
+        )),
+        Positioned(
+            top: 60,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: ListView.builder(
+                itemCount: searchMemberList.length + 1,
+                itemBuilder: (context, index) {
+                  if (index == 0) {
+                    return Container(
+                      alignment: Alignment.topLeft,
+                      color: theme.weakDividerColor,
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 6, horizontal: 16),
+                      child: Text(
+                        TIM_t("群成员"),
+                        style:
+                        TextStyle(fontSize: 14, color: theme.weakTextColor),
+                      ),
+                    );
+                  }
+                  var e = searchMemberList[index - 1];
+                  return Container(
+                    decoration: BoxDecoration(
+                        color: Colors.white,
+                        border: Border(
+                            bottom: BorderSide(
+                                color: theme.weakDividerColor ??
+                                    CommonColor.weakDividerColor))),
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 10, horizontal: 16),
                     child: InkWell(
                       onTap: () {
                         final isChecked = selectedMemberList.contains(e);
@@ -689,7 +733,7 @@ class _GroupProfileAddAdminState extends TIMUIKitState<GroupProfileAddAdmin> {
                             width: 36,
                             height: 36,
                             child: Avatar(
-                              faceUrl: e?.faceUrl ?? "",
+                              faceUrl: (e?.faceUrl ?? ""),
                               showName: _getShowName(e),
                               type: 2,
                             ),
@@ -697,14 +741,14 @@ class _GroupProfileAddAdminState extends TIMUIKitState<GroupProfileAddAdmin> {
                           const SizedBox(
                             width: 10,
                           ),
-                          Text(_getShowName(e), style: const TextStyle(fontSize: 16))
+                          Text(_getShowName(e),
+                              style: const TextStyle(fontSize: 16))
                         ],
                       ),
                     ),
-                  ))
-              .toList(),
-        ],
-      ));
+                  );
+                }))
+      ]);
     }
 
     return TUIKitScreenUtils.getDeviceWidget(

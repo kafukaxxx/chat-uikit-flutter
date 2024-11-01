@@ -70,11 +70,11 @@ class DesktopControlBarConfig {
 
   DesktopControlBarConfig({
     this.showStickerPanel = true,
-    this.showScreenshotButton = true,
+    this.showScreenshotButton = false,
     this.showSendFileButton = true,
-    this.showSendImageButton = true,
+    this.showSendImageButton = false,
     this.showSendVideoButton = true,
-    this.showMessageHistoryButton = true,
+    this.showMessageHistoryButton = false,
   });
 }
 

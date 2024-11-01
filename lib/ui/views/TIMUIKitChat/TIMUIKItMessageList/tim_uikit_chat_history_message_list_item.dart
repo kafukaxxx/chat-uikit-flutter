@@ -189,6 +189,7 @@ class TIMUIKitHistoryMessageListItem extends StatefulWidget {
 
   /// tap remote user avatar callback function
   final void Function(String userID, TapDownDetails tapDetails)? onTapForOthersPortrait;
+  final void Function(String userID, TapDownDetails tapDetails)? onRightMouseClickPortrait;
 
   /// secondary tap remote user avatar callback function
   final void Function(String userID, TapDownDetails tapDetails)? onSecondaryTapForOthersPortrait;
@@ -278,6 +279,7 @@ class TIMUIKitHistoryMessageListItem extends StatefulWidget {
       this.onScrollToIndex,
       this.onScrollToIndexBegin,
       this.onTapForOthersPortrait,
+        this.onRightMouseClickPortrait,
       this.messageItemBuilder,
       this.onLongPressForOthersHeadPortrait,
       this.showAvatar = true,
@@ -343,7 +345,10 @@ class TipsActionItem extends TIMUIKitStatelessWidget {
 class _TIMUIKItHistoryMessageListItemState extends TIMUIKitState<TIMUIKitHistoryMessageListItem> with SingleTickerProviderStateMixin {
   SuperTooltip? tooltip;
   late AnimationController _animationController;
-
+//显示内容
+  bool _shouldReact = false;
+  //坐标位置
+  Offset? _position;
   // ignore: unused_field
   final MessageService _messageService = serviceLocator<MessageService>();
   final TUISelfInfoViewModel selfInfoModel = serviceLocator<TUISelfInfoViewModel>();
@@ -1264,16 +1269,40 @@ class _TIMUIKItHistoryMessageListItemState extends TIMUIKitState<TIMUIKitHistory
                           child: widget.userAvatarBuilder != null
                               ? widget.userAvatarBuilder!(context, message)
                               : Container(
-                                  margin: (isSelf && isShowNickNameForSelf) || (!isSelf && isShowNickNameForOthers) ? const EdgeInsets.only(top: 2) : null,
-                                  child: SizedBox(
-                                    width: 40,
-                                    height: 40,
-                                    child: Avatar(
-                                      faceUrl: message.faceUrl ?? "",
-                                      showName: MessageUtils.getDisplayName(message),
-                                    ),
-                                  ),
+                            margin: (isSelf && isShowNickNameForSelf) ||
+                                (!isSelf && isShowNickNameForOthers)
+                                ? const EdgeInsets.only(top: 2)
+                                : null,
+                            child: SizedBox(
+                              width: 40,
+                              height: 40,
+                              child: Listener(
+                                child: Avatar(
+                                  faceUrl: (message.faceUrl ?? "")
+                                      .appendImgUrl(),
+                                  showName: MessageUtils.getDisplayName(
+                                      message),
                                 ),
+                                onPointerDown: (event) {
+                                  _shouldReact = event.kind ==
+                                      PointerDeviceKind.mouse &&
+                                      event.buttons ==
+                                          kSecondaryMouseButton;
+                                },
+                                onPointerUp: (event) {
+                                  if (!_shouldReact) return;
+
+                                  _position = Offset(
+                                    event.position.dx,
+                                    event.position.dy,
+                                  );
+                                  var tapp = TapDownDetails(localPosition: _position);
+                                  widget.onRightMouseClickPortrait?.call(message.sender ?? "",tapp);
+
+                                },
+                              ),
+                            ),
+                          ),
                         ),
                       if (isSelf && widget.message.elemType == 6 && isDownloadWaiting)
                         Container(

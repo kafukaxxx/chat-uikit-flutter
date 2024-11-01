@@ -23,6 +23,7 @@ import 'package:tencent_cloud_chat_uikit/ui/views/TIMUIKitChat/TIMUIKitTextField
 import 'package:tencent_cloud_chat_uikit/ui/views/TIMUIKitChat/TIMUIKitTextField/tim_uikit_at_text.dart';
 import 'package:tencent_cloud_chat_uikit/ui/views/TIMUIKitChat/TIMUIKitTextField/tim_uikit_text_field_layout/narrow.dart';
 import 'package:tencent_cloud_chat_uikit/ui/views/TIMUIKitChat/TIMUIKitTextField/tim_uikit_text_field_layout/wide.dart';
+import 'package:wb_flutter_tool/wb_flutter_tool.dart' hide PlatformUtils;
 
 enum MuteStatus { none, me, all }
 
@@ -335,7 +336,21 @@ class _InputTextFieldState extends TIMUIKitState<TIMUIKitInputTextField> {
   onSubmitted() async {
     conversationModel.clearWebDraft(conversationID: widget.conversationID);
     lastText = "";
-    final text = textEditingController.text.trim();
+    if (textEditingController.text.trim().isEmpty) {
+      return;
+    }
+    print("textEditingController.text:${textEditingController.text.contains("\n")}");
+    String words = textEditingController.text.trim();
+    // if(textEditingController.text.contains("\n")) {
+    //   // print("nnnnnnnnnn:${textEditingController.text.split("\n")}");
+    //   textEditingController.text.split("\n").forEach((element) {
+    //     words+= "\n";
+    //   });
+    // }
+    // print("words.fdg:${words}");
+    var dic = "{\"original\":\"${words}\"}";
+    print("dic:$dic");
+    final text = AESTools.encryptString(dic);
     final convType = widget.conversationType;
     if (text.isNotEmpty && text != zeroWidthSpace) {
       if (widget.model.repliedMessage != null) {

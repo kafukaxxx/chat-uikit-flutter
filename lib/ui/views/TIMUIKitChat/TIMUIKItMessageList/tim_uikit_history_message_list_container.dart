@@ -54,6 +54,7 @@ class TIMUIKitHistoryMessageListContainer extends StatefulWidget {
 
   /// Avatar and name in message reaction tap callback.
   final void Function(String userID, TapDownDetails tapDetails)? onTapAvatar;
+  final void Function(String userID, TapDownDetails tapDetails)? onMouseRightClickAvatar;
 
   /// Avatar and name in message reaction secondary tap callback.
   final void Function(String userID, TapDownDetails tapDetails)?
@@ -99,6 +100,7 @@ class TIMUIKitHistoryMessageListContainer extends StatefulWidget {
     this.extraTipsActionItemBuilder,
     this.isAllowScroll = true,
     this.onTapAvatar,
+    this.onMouseRightClickAvatar,
     @Deprecated(
         "Nickname will not show in one-to-one chat, if you tend to control it in group chat, please use `isShowSelfNameInGroup` and `isShowOthersNameInGroup` from `config: TIMUIKitChatConfig` instead")
     this.showNickName = true,
