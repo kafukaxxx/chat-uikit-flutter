@@ -27,8 +27,9 @@ class TIMUIKitMessageReadReceipt extends TIMUIKitStatelessWidget {
 
     return Selector<TUIChatGlobalModel, V2TimMessageReceipt?>(
       builder: (context, value, child) {
+        //TODO: 这里去掉了群消息的圆圈
         // if (value == null || value.unreadCount == 0 && value.readCount == 0) {
-        //   return Container();
+          return Container();
         // }
         return GestureDetector(
           behavior: HitTestBehavior.opaque,

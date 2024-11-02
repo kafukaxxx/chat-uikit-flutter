@@ -295,10 +295,10 @@ class GroupProfileButtonArea extends TIMUIKitStatelessWidget {
               return ["clearHistory", "quitGroup", "transimitOwner"]
                   .contains(element["id"]);
             }
-            if (groupType != "Work") {
-              return ["clearHistory", "dismissGroup", "transimitOwner"]
-                  .contains(element["id"]);
-            }
+            // if (groupType != "Work") {
+            //   return ["clearHistory", "dismissGroup", "transimitOwner"]
+            //       .contains(element["id"]);
+            // }
             return true;
           }
         })

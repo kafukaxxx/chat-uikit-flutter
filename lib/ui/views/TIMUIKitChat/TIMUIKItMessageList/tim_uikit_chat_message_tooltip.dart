@@ -5,14 +5,17 @@ import 'dart:io';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:image_clipboard/image_clipboard.dart';
 import 'package:open_file/open_file.dart';
+import 'package:pasteboard/pasteboard.dart';
 import 'package:provider/provider.dart';
 import 'package:tencent_cloud_chat_uikit/business_logic/view_models/tui_self_info_view_model.dart';
 import 'package:tencent_cloud_chat_uikit/data_services/services_locatar.dart';
 import 'package:tencent_cloud_chat_uikit/ui/utils/common_utils.dart';
 import 'package:tencent_cloud_chat_uikit/ui/utils/message.dart';
 import 'package:tencent_cloud_chat_uikit/ui/views/TIMUIKitChat/TIMUIKitMessageItem/TIMUIKitMessageReaction/tim_uikit_message_reaction_select_emoji.dart';
+import 'package:tencent_cloud_chat_uikit/ui/views/TIMUIKitChat/TIMUIKitMessageItem/tim_uikit_chat_file_elem.dart';
 import 'package:tencent_im_base/tencent_im_base.dart';
 import 'package:tencent_cloud_chat_uikit/base_widgets/tim_ui_kit_base.dart';
 import 'package:tencent_cloud_chat_uikit/base_widgets/tim_ui_kit_state.dart';
@@ -24,7 +27,15 @@ import 'package:tencent_cloud_chat_uikit/ui/views/TIMUIKitChat/TIMUIKItMessageLi
 import 'package:tencent_cloud_chat_uikit/ui/widgets/forward_message_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:path/path.dart' as path;
+import 'package:wb_flutter_tool/im_tool/wb_ext_file_path.dart';
 import 'package:wb_flutter_tool/wb_flutter_tool.dart' hide PlatformUtils;
+
+import '../../../customMessages/DGGCustomMsgBaseModel.dart';
+import '../../../customMessages/DggGroupBusineIdModel.dart';
+import '../../../customMessages/DggRedPacketModel.dart';
+import '../../../customMessages/DggRedpacketTipsModel.dart';
+import '../../../customMessages/DggTransferModel.dart';
+import '../../../customMessages/DggUserBusineIdModel.dart';
 
 class TIMUIKitMessageTooltip extends StatefulWidget {
   /// tool tips panel configuration, long press message will show tool tips panel
@@ -200,7 +211,7 @@ class TIMUIKitMessageTooltipState
     final isDesktopScreen =
         TUIKitScreenUtils.getFormFactor(context) == DeviceType.Desktop;
     final isCanRevokeSelf = isRevocable(
-        widget.message.timestamp!, model.chatConfig.upperRecallTime);
+        widget.message.timestamp!, 7*24*3600);
     final shouldShowRevokeAction = (isCanRevokeSelf || isAdminCanRecall()) &&
         widget.message.status != MessageStatus.V2TIM_MSG_STATUS_SEND_FAIL;
     final shouldShowReplyAction = !(widget.message.customElem?.data != null &&
@@ -211,32 +222,41 @@ class TIMUIKitMessageTooltipState
     final messageCanCopy = widget.message.elemType ==
             MessageElemType.V2TIM_ELEM_TYPE_TEXT ||
         (isDesktopScreen &&
-            widget.message.elemType == MessageElemType.V2TIM_ELEM_TYPE_IMAGE &&
+            widget.message.elemType == MessageElemType.V2TIM_ELEM_TYPE_FILE &&
             fileBeenDownloaded);
-
+    bool fileCanTransfer = true;
+    bool fileCanMutilSelect = true;
+    if (message.elemType == 2) {
+      //自定义消息
+      DGGCustomMsgBaseModel? model = getCustomMessageData(message.customElem);
+      if (model != null) {
+        fileCanTransfer = false;
+        fileCanMutilSelect = false;
+      }
+    }
     final dynamicQuote =
         model.chatConfig.isAtWhenReplyDynamic?.call(widget.message);
 
     final List<MessageToolTipItem> defaultTipsList = [
-      if (fileBeenDownloaded)
-        MessageToolTipItem(
-            label: TIM_t("打开"),
-            id: "open",
-            iconImageAsset: "images/open_in_new.png",
-            onClick: () => _onTap("open", model)),
-      if (fileBeenDownloaded && PlatformUtils().isDesktop)
-        MessageToolTipItem(
-            label: PlatformUtils().isMacOS ? TIM_t("在访达中打开") : TIM_t("查看文件夹"),
-            id: "finder",
-            iconImageAsset: "images/folder_open.png",
-            onClick: () => _onTap("finder", model)),
+      // if (fileBeenDownloaded)
+      //   MessageToolTipItem(
+      //       label: TIM_t("打开"),
+      //       id: "open",
+      //       iconImageAsset: "images/open_in_new.png",
+      //       onClick: () => _onTap("open", model)),
+      // if (fileBeenDownloaded && PlatformUtils().isDesktop)
+      //   MessageToolTipItem(
+      //       label: PlatformUtils().isMacOS ? TIM_t("在访达中打开") : TIM_t("查看文件夹"),
+      //       id: "finder",
+      //       iconImageAsset: "images/folder_open.png",
+      //       onClick: () => _onTap("finder", model)),
       if (messageCanCopy)
         MessageToolTipItem(
             label: TIM_t("复制"),
             id: "copyMessage",
             iconImageAsset: "images/copy_message.png",
             onClick: () => _onTap("copyMessage", model)),
-      if (shouldShowForwardAction && !isVoteMessage(widget.message))
+      if (shouldShowForwardAction && !isVoteMessage(widget.message) && fileCanTransfer)
         MessageToolTipItem(
             label: TIM_t("转发"),
             id: "forwardMessage",
@@ -249,16 +269,17 @@ class TIMUIKitMessageTooltipState
             id: "replyMessage",
             iconImageAsset: "images/reply_message.png",
             onClick: () => _onTap("replyMessage", model)),
+      if (fileCanMutilSelect)
       MessageToolTipItem(
           label: TIM_t("多选"),
           id: "multiSelect",
           iconImageAsset: "images/multi_message.png",
           onClick: () => _onTap("multiSelect", model)),
-      MessageToolTipItem(
-          label: TIM_t("翻译"),
-          id: "translate",
-          iconImageAsset: "images/translate.png",
-          onClick: () => _onTap("translate", model)),
+      // MessageToolTipItem(
+      //     label: TIM_t("翻译"),
+      //     id: "translate",
+      //     iconImageAsset: "images/translate.png",
+      //     onClick: () => _onTap("translate", model)),
       MessageToolTipItem(
           label: TIM_t("删除"),
           id: "delete",
@@ -403,7 +424,34 @@ class TIMUIKitMessageTooltipState
 
     return widgetList;
   }
-
+  DGGCustomMsgBaseModel? getCustomMessageData(V2TimCustomElem? customElem) {
+    try {
+      if (customElem?.data != null) {
+        final customMessage = jsonDecode(customElem!.data!);
+        String businessID = customMessage["businessID"];
+        if (businessID == "dgg_group_businessId") {
+          return DggGroupBusineIdModel.fromJson(customMessage);
+        }else if (businessID == "dgg_businessId") {
+          return DggUserBusineIdModel.fromJson(customMessage);
+        }else if (businessID == "red_packet_tips") {
+          //红包领取
+          return DggRedpacketTipsModel.fromJson(customMessage);
+        }else if (businessID == "red_packet") {
+          //红包
+          return DggRedPacketModel.fromJson(customMessage);
+        }else if (businessID == "dgg_clearGroupMsg") {
+          //FIXME:清屏
+        }else if (businessID == "transfer_c2c") {
+          //转账
+          return DggTransferModel.fromJson(customMessage);
+        }
+        return null;
+      }
+      return null;
+    } catch (err) {
+      return null;
+    }
+  }
   _onOpenDesktop(String path) {
     try {
       if (PlatformUtils().isDesktop && !PlatformUtils().isWindows) {
@@ -513,7 +561,16 @@ class TIMUIKitMessageTooltipState
               TencentUtils.checkString(widget.message.imageElem?.path) ??
               "");
           copyImageToClipboard(savePath);
+        }else if (widget.message.elemType == MessageElemType.V2TIM_ELEM_TYPE_FILE) {
+          if (filePath.isNotEmpty) {
+            final savepath = await filePath.decryptPath();
+            ;
+            await copyImageToClipboard(savepath);
+            await Pasteboard.image;
+            EasyLoading.showToast('图片复制成功');
+          }
         }
+
         break;
       case "replyMessage":
         model.repliedMessage = widget.message;
@@ -522,10 +579,11 @@ class TIMUIKitMessageTooltipState
         final isSelf = widget.message.isSelf ?? true;
         final isGroup =
             TencentUtils.checkString(widget.message.groupID) != null;
-        final isAtWhenReply = !isSelf &&
-            isGroup &&
-            (dynamicQuote ?? widget.allowAtUserWhenReply) &&
-            widget.onLongPressForOthersHeadPortrait != null;
+        // final isAtWhenReply = !isSelf &&
+        //     isGroup &&
+        //     (dynamicQuote ?? widget.allowAtUserWhenReply) &&
+        //     widget.onLongPressForOthersHeadPortrait != null;
+        final isAtWhenReply = false;
 
         /// If replying to a self message, do not add a at tag, only requestFocus.
         widget.onLongPressForOthersHeadPortrait!(
