@@ -14,6 +14,7 @@ import 'package:tencent_cloud_chat_uikit/data_services/services_locatar.dart';
 
 import 'package:tencent_cloud_chat_uikit/ui/views/TIMUIKitAddFriend/tim_uikit_send_application.dart';
 import 'package:tencent_cloud_chat_uikit/ui/widgets/avatar.dart';
+import 'package:wb_flutter_tool/wb_flutter_tool.dart';
 
 class TIMUIKitAddFriend extends StatefulWidget {
   final bool? isShowDefaultGroup;
@@ -180,16 +181,23 @@ class _TIMUIKitAddFriendState extends TIMUIKitState<TIMUIKitAddFriend> {
   }
 
   searchFriend(String params) async {
-    final response = await _coreServicesImpl.getUsersInfo(userIDList: [params]);
-    if (response.code == 0) {
-      setState(() {
-        searchResult = response.data;
-      });
-    } else {
-      setState(() {
-        searchResult = null;
-      });
+    var resp = await WBsyncHttpRequest().post(WBApi.searchUser,data: {"username":params},showHud: true);
+    if (resp.code == 200) {
+      var str = resp.data["user_id"].toString();
+      if (str.isNotEmpty) {
+        final response = await _coreServicesImpl.getUsersInfo(userIDList: [str]);
+        if (response.code == 0) {
+          setState(() {
+            searchResult = response.data;
+          });
+        } else {
+          setState(() {
+            searchResult = null;
+          });
+        }
+      }
     }
+
   }
 
   @override
@@ -246,7 +254,7 @@ class _TIMUIKitAddFriendState extends TIMUIKitState<TIMUIKitAddFriend> {
                         ),
                         fillColor: theme.inputFillColor,
                         filled: true,
-                        hintText: TIM_t("搜索用户 ID")),
+                        hintText: TIM_t("请输入用户账号")),
                   )),
                 ],
               ),

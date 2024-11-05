@@ -358,7 +358,7 @@ class GroupProfileButtonArea extends TIMUIKitStatelessWidget {
         TUIKitScreenUtils.getFormFactor(context) == DeviceType.Desktop;
     if (isDesktopScreen) {
       return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: EdgeInsets.fromLTRB(16, 10, 16, 60),
         child: Wrap(
           spacing: 28,
           children: [

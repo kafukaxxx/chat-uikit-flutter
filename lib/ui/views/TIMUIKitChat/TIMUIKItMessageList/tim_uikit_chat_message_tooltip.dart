@@ -30,12 +30,14 @@ import 'package:path/path.dart' as path;
 import 'package:wb_flutter_tool/im_tool/wb_ext_file_path.dart';
 import 'package:wb_flutter_tool/wb_flutter_tool.dart' hide PlatformUtils;
 
+import '../../../../data_services/core/tim_uikit_wide_modal_operation_key.dart';
 import '../../../customMessages/DGGCustomMsgBaseModel.dart';
 import '../../../customMessages/DggGroupBusineIdModel.dart';
 import '../../../customMessages/DggRedPacketModel.dart';
 import '../../../customMessages/DggRedpacketTipsModel.dart';
 import '../../../customMessages/DggTransferModel.dart';
 import '../../../customMessages/DggUserBusineIdModel.dart';
+import '../../../widgets/wide_popup.dart';
 
 class TIMUIKitMessageTooltip extends StatefulWidget {
   /// tool tips panel configuration, long press message will show tool tips panel
@@ -533,13 +535,40 @@ class TIMUIKitMessageTooltipState
         break;
       case "forwardMessage":
         model.addToMultiSelectedMessageList(widget.message);
-        Navigator.push(
-            context,
-            MaterialPageRoute(
-                builder: (context) => ForwardMessageScreen(
-                      conversationType: ConvType.c2c,
-                      model: model,
-                    )));
+        // Navigator.push(
+        //     context,
+        //     MaterialPageRoute(
+        //         builder: (context) => ForwardMessageScreen(
+        //               conversationType: ConvType.c2c,
+        //               model: model,
+        //             )));
+        TUIKitWidePopup.showPopupWindow(
+            operationKey: TUIKitWideModalOperationKey.forward,
+            context: context,
+            title: TIM_t("转发"),
+            submitWidget: Text(TIM_t("发送")),
+            width: MediaQuery
+                .of(context)
+                .size
+                .width * 0.5,
+            height: MediaQuery
+                .of(context)
+                .size
+                .height * 0.8,
+            onSubmit: () {
+              forwardMessageScreenKey.currentState?.handleForwardMessage();
+            },
+            child: (onClose) =>
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  child: ForwardMessageScreen(
+                    conversationType: ConvType.c2c,
+                    key: forwardMessageScreenKey,
+                    onClose: null,
+                    model: model,
+                  ),
+                ),
+            theme: CommonColor.defaultTheme);
         break;
       case "copyMessage":
         if (widget.message.elemType == MessageElemType.V2TIM_ELEM_TYPE_TEXT) {

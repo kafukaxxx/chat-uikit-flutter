@@ -740,6 +740,12 @@
       "languageVersion": "2.14"
     },
     {
+      "name": "just_audio_windows",
+      "rootUri": "file:///C:/Users/PC/AppData/Local/Pub/Cache/hosted/pub.dev/just_audio_windows-0.2.2",
+      "packageUri": "lib/",
+      "languageVersion": "2.16"
+    },
+    {
       "name": "link_preview_generator_for_us",
       "rootUri": "file:///C:/Users/PC/AppData/Local/Pub/Cache/hosted/pub.dev/link_preview_generator_for_us-2.0.0",
       "packageUri": "lib/",
@@ -1454,7 +1460,7 @@
       "languageVersion": "3.0"
     }
   ],
-  "generated": "2024-11-01T06:03:10.183125Z",
+  "generated": "2024-11-05T13:38:37.439467Z",
   "generator": "pub",
   "generatorVersion": "3.5.1",
   "flutterRoot": "file:///C:/development/flutter_windows_3.24.1-stable/flutter",

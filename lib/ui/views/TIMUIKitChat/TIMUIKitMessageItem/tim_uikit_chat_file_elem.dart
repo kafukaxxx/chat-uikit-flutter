@@ -24,6 +24,7 @@ import 'package:universal_html/html.dart' as html;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:wb_flutter_tool/im_tool/wb_ext_file_path.dart';
 import 'package:wb_flutter_tool/wb_flutter_tool.dart' hide PlatformUtils;
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 
 class TIMUIKitFileElem extends StatefulWidget {
   final String? messageID;
@@ -61,6 +62,8 @@ class _TIMUIKitFileElemState extends TIMUIKitState<TIMUIKitFileElem> {
   double? containerHeight;
   bool? _downloadFailed = false;
   String decryptLocalPath = "";
+  String imgUrl = "";
+  String decodeUrl = "";
   @override
   void dispose() {
     if (advancedMsgListener != null) {
@@ -78,10 +81,29 @@ class _TIMUIKitFileElemState extends TIMUIKitState<TIMUIKitFileElem> {
     if (!PlatformUtils().isWeb) {
       Future.delayed(const Duration(microseconds: 10), () {
         hasFile();
-        dggAsyncDownloadFile();
-        addAdvancedMsgListenerForDownload();
+        // addAdvancedMsgListenerForDownload();
+        // dggAsyncDownloadFile();
       });
     }
+    if (widget.messageID != null) {
+      if (widget.fileElem?.url?.isNotEmpty == true) {
+        setState(() {
+          imgUrl = widget.fileElem?.url ?? "";
+        });
+      }else {
+       getImgUrl();
+      }
+
+
+
+    }
+  }
+  getImgUrl() async {
+    var resp = await model.getOnlineUrl(widget.messageID ?? "");
+    print("gettted file url:${widget.fileElem?.url}");
+    setState(() {
+      imgUrl = resp.data?.fileElem?.url ?? "";
+    });
   }
   dggAsyncDownloadFile() async {
     if (await hasFile()) {
@@ -110,9 +132,13 @@ class _TIMUIKitFileElemState extends TIMUIKitState<TIMUIKitFileElem> {
           (V2TimMessageDownloadProgress messageProgress) async {
         if (messageProgress.msgID == widget.message.msgID) {
           if (messageProgress.isError || messageProgress.errorCode != 0) {
-            setState(() {
-              _downloadFailed = true;
-            });
+            _downloadFailed = true;
+            if (mounted) {
+              setState(() {
+
+              });
+            }
+
             return;
           }
 
@@ -159,6 +185,11 @@ class _TIMUIKitFileElemState extends TIMUIKitState<TIMUIKitFileElem> {
   Future<bool> hasFile() async {
     if (PlatformUtils().isWeb) {
       return true;
+    }
+    if (imgUrl == "") {
+      setState(() {
+        imgUrl = widget.fileElem?.url ?? "";
+      });
     }
     String savePath = TencentUtils.checkString(
             model.getFileMessageLocation(widget.messageID)) ??
@@ -385,71 +416,150 @@ class _TIMUIKitFileElemState extends TIMUIKitState<TIMUIKitFileElem> {
         //       size: 20,
         //     ),
         //   ),
-        TIMUIKitMessageReactionWrapper(
-            chatModel: widget.chatModel,
-            isShowJump: widget.isShowJump,
-            clearJump: widget.clearJump,
-            isFromSelf: widget.message.isSelf ?? true,
-            isShowMessageReaction: widget.isShowMessageReaction ?? true,
-            message: widget.message,
-            child: GestureDetector(
-              onTap: () async {
-                try {
-                  if (PlatformUtils().isWeb) {
-                    if (!isWebDownloading) {
-                      downloadWebFile(widget.fileElem?.path ?? "");
-                    }
-                    return;
-                  }
+        GestureDetector(
+          onTap: () async {
 
 
-                  if (await hasFile()) {
-                    if (received == 100) {
-                      tryOpenFile(context, theme);
-                    } else {
-                      onTIMCallback(
-                        TIMCallback(
-                          type: TIMCallbackType.INFO,
-                          infoRecommendText: TIM_t("正在下载中"),
-                          infoCode: 6660411,
-                        ),
-                      );
-                    }
-                    return;
-                  }
-                  if (checkIsWaiting()) {
-                    onTIMCallback(
-                      TIMCallback(
-                          type: TIMCallbackType.INFO,
-                          infoRecommendText: TIM_t("已加入待下载队列，其他文件下载中"),
-                          infoCode: 6660413),
-                    );
-                    return;
-                  } else {
-                    await addUrlToWaitingPath(theme);
-                  }
-                } catch (e) {
-                  onTIMCallback(TIMCallback(
-                      type: TIMCallbackType.INFO,
-                      infoRecommendText: "文件处理异常",
-                      infoCode: 6660416));
+              if (PlatformUtils().isWeb) {
+                if (!isWebDownloading) {
+                  downloadWebFile(widget.fileElem?.path ?? "");
                 }
-              },
-              child: decryptLocalPath.isEmpty ?  _renderImage(heroTag: 1) : Container(
-                          child: Image.file(File(decryptLocalPath),width: 200,)),
-            )),
-        if (!widget.isSelf && isWebDownloading)
-          Container(
-            margin: const EdgeInsets.only(top: 2),
-            child: LoadingAnimationWidget.threeArchedCircle(
-              color: theme.weakTextColor ?? Colors.grey,
-              size: 20,
-            ),
+                return;
+              }
+              if (imgUrl.isNotEmpty) {
+                var opfile = await DefaultCacheManager().getSingleFile(
+                    imgUrl);
+                decodeUrl = await opfile.path.decryptPath();
+                //用电脑自带插件打开，客户觉得卡 、改成有弹窗打开
+                // print("decodeUrl:$decodeUrl");
+                // outputLogger.i("decodeUrl:$decodeUrl");
+                OpenFile.open(decodeUrl);
+                // Navigator.of(context).push(
+                //   PageRouteBuilder(
+                //     opaque: false, // set to false
+                //     pageBuilder: (_, __, ___) => ImageScreen(
+                //         imageProvider: getImageProvider(decodeUrl), heroTag: decodeUrl),
+                //   ),
+                // );
+                return;
+              }
+
+
+          },
+
+          child: //本地有没有缓存文件
+          (imgUrl.isEmpty ? _emptyImage() :  _renderCacheImage(url: imgUrl)
           ),
+        )
+        // TIMUIKitMessageReactionWrapper(
+        //     chatModel: widget.chatModel,
+        //     isShowJump: widget.isShowJump,
+        //     clearJump: widget.clearJump,
+        //     isFromSelf: widget.message.isSelf ?? true,
+        //     isShowMessageReaction: widget.isShowMessageReaction ?? true,
+        //     message: widget.message,
+        //     child: GestureDetector(
+        //       onTap: () async {
+        //         try {
+        //           if (PlatformUtils().isWeb) {
+        //             if (!isWebDownloading) {
+        //               downloadWebFile(widget.fileElem?.path ?? "");
+        //             }
+        //             return;
+        //           }
+        //
+        //
+        //           if (await hasFile()) {
+        //             if (received == 100) {
+        //               tryOpenFile(context, theme);
+        //             } else {
+        //               onTIMCallback(
+        //                 TIMCallback(
+        //                   type: TIMCallbackType.INFO,
+        //                   infoRecommendText: TIM_t("正在下载中"),
+        //                   infoCode: 6660411,
+        //                 ),
+        //               );
+        //             }
+        //             return;
+        //           }
+        //           if (checkIsWaiting()) {
+        //             onTIMCallback(
+        //               TIMCallback(
+        //                   type: TIMCallbackType.INFO,
+        //                   infoRecommendText: TIM_t("已加入待下载队列，其他文件下载中"),
+        //                   infoCode: 6660413),
+        //             );
+        //             return;
+        //           } else {
+        //             await addUrlToWaitingPath(theme);
+        //           }
+        //         } catch (e) {
+        //           onTIMCallback(TIMCallback(
+        //               type: TIMCallbackType.INFO,
+        //               infoRecommendText: "文件处理异常",
+        //               infoCode: 6660416));
+        //         }
+        //       },
+        //       child: decryptLocalPath.isEmpty ?  _renderImage(heroTag: 1) : Container(
+        //                   child: Image.file(File(decryptLocalPath),width: 200,)),
+        //     )),
+        // if (!widget.isSelf && isWebDownloading)
+        //   Container(
+        //     margin: const EdgeInsets.only(top: 2),
+        //     child: LoadingAnimationWidget.threeArchedCircle(
+        //       color: theme.weakTextColor ?? Colors.grey,
+        //       size: 20,
+        //     ),
+        //   ),
       ],
     );
   }
+  Uint8List _getFlutterCachedImg(File filex) {
+    try {
+      var aescode = Uint8List.fromList( aesKey.codeUnits);
+      var file = filex.readAsBytesSync();
+      var imgfile = file.sublist(aescode.length,file.length);
+      return imgfile;
+    } catch(e) {
+      // print("get localImgData error：${e}");
 
+
+      return Uint8List(0);
+    }
+  }
+  Widget _renderCacheImage({dynamic heroTag,required String url}) {
+    return Container(
+      width: 200,
+      height: 200,
+      color: Colors.grey,
+      alignment: Alignment.center,
+      child: FutureBuilder(
+        future: DefaultCacheManager().getSingleFile(url),
+        builder: (context,snapshot) {
+          if (snapshot.connectionState == ConnectionState.done &&
+              snapshot.hasData) {
+            return Image.memory(_getFlutterCachedImg(snapshot.data!));
+          } else if (snapshot.hasError) {
+            return Text('Error: ${snapshot.error}');
+          } else {
+            return Container(width: 30,height: 30,child: const CircularProgressIndicator(),);
+          }
+        },
+
+      ),
+    );
+  }
+  Widget _emptyImage() {
+    return Container(
+      width: 200,
+      height: 200,
+      padding:const EdgeInsets.symmetric(horizontal: 10),
+      color: Colors.grey,
+      alignment: Alignment.center,
+      child:const Text("图片处理中...",style: TextStyle(color: Colors.white),),
+    );
+  }
   Widget _renderImage({dynamic heroTag,int downLoaded = 0
   }) {
 

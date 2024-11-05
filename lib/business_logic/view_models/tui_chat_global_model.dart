@@ -6,10 +6,12 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:just_audio/just_audio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tencent_cloud_chat_uikit/base_widgets/tim_ui_kit_class.dart';
 import 'package:tencent_cloud_chat_uikit/business_logic/life_cycle/chat_life_cycle.dart';
 import 'package:tencent_cloud_chat_uikit/business_logic/separate_models/tui_chat_model_tools.dart';
+import 'package:tencent_cloud_chat_uikit/business_logic/view_models/tui_conversation_view_model.dart';
 import 'package:tencent_cloud_chat_uikit/data_services/group/group_services.dart';
 import 'package:tencent_cloud_chat_uikit/data_services/message/message_services.dart';
 import 'package:tencent_cloud_chat_uikit/data_services/services_locatar.dart';
@@ -41,7 +43,7 @@ class TUIChatGlobalModel extends ChangeNotifier implements TIMUIKitClass {
   final Map<String, dynamic> _preloadImageMap = {};
   final Map<String, HistoryMessagePosition> _historyMessagePositionMap = {};
   final List<CurrentConversation> _currentConversationList = [];
-
+  final _player = AudioPlayer();
   Map<String, dynamic> get preloadImageMap => _preloadImageMap;
 
   ChatLifeCycle? _lifeCycle;
@@ -65,8 +67,9 @@ class TUIChatGlobalModel extends ChangeNotifier implements TIMUIKitClass {
   bool _showC2cMessageEditStatus = true;
   final Map<String, Timer> _c2cMessageStatusShowTimer = Map.from({});
   Map<String, List> loadingMessage = {};
-
+  List<String> _receivedMsgIds = [];
   TUIChatGlobalModel() {
+    _player.setAsset("assets/wechat.mp3");
     advancedMsgListener = V2TimAdvancedMsgListener(
       onRecvC2CReadReceipt: (List<V2TimMessageReceipt> receiptList) {
         _onReceiveC2CReadReceipt(receiptList);
@@ -76,6 +79,21 @@ class TUIChatGlobalModel extends ChangeNotifier implements TIMUIKitClass {
       },
       onRecvNewMessage: (V2TimMessage newMsg) {
         _onReceiveNewMsg(newMsg);
+        if (!_receivedMsgIds.contains(newMsg.msgID)) {
+          _receivedMsgIds.add(newMsg.msgID ?? "");
+          final TUIConversationViewModel _conversationViewModel =
+          serviceLocator<TUIConversationViewModel>();
+          List<V2TimConversation?> convs =
+              _conversationViewModel.conversationList;
+          for (V2TimConversation? conv in convs) {
+            if (newMsg.userID == conv?.userID ||
+                newMsg.groupID == conv?.groupID) {
+              if (conv?.recvOpt == 0) {
+                _playWechatAudio();
+              }
+            }
+          }
+        }
       },
       onSendMessageProgress: (V2TimMessage messagae, int progress) {
         _onSendMessageProgress(messagae, progress);
@@ -91,7 +109,14 @@ class TUIChatGlobalModel extends ChangeNotifier implements TIMUIKitClass {
       },
     );
   }
+  _playWechatAudio() async {
+    //播放声音
+    //https://img.tukuppt.com/newpreview_music/01/66/62/63c0ebd3a5faf753.mp3
 
+    if (!_player.playing) {
+      _player.play();
+    }
+  }
   bool get isDownloading => _isDownloading;
 
   bool get hasWaiting => _waitingDownloadList.isNotEmpty;
@@ -101,7 +126,12 @@ class TUIChatGlobalModel extends ChangeNotifier implements TIMUIKitClass {
   int getWaitingListLength() {
     return _waitingDownloadList.length;
   }
-
+  Future<V2TimValueCallback<V2TimMessageOnlineUrl>> getOnlineUrl(String msgID) {
+    final result = TencentImSDKPlugin.v2TIMManager
+        .getMessageManager()
+        .getMessageOnlineUrl(msgID: msgID);
+    return result;
+  }
   void addWaitingList(String msgID) {
     outputLogger.i("add to waiting list success");
     bool contains = false;

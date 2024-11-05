@@ -13,7 +13,8 @@ import 'package:tencent_cloud_chat_uikit/ui/utils/platform.dart';
 import 'package:tencent_cloud_chat_uikit/ui/widgets/wide_popup.dart';
 import 'package:path/path.dart' as path;
 import 'package:url_launcher/url_launcher.dart';
-
+import 'package:wb_flutter_tool/im_tool/wb_ext_file_path.dart';
+import 'package:wb_flutter_tool/wb_flutter_tool.dart' hide PlatformUtils;
 import 'TIMUIKitMessageItem/tim_uikit_chat_file_icon.dart';
 
 String _getConvID(V2TimConversation conversation) {
@@ -33,6 +34,13 @@ sendFileWithConfirmation(
   bool isCanSend = true;
 
   if (!PlatformUtils().isWeb) {
+    files.forEach((e) {
+      String fileExtension = path.extension(e.path);
+      List<String> imgExArr = [".jpg",".jpeg",".png",".gif"];
+      if (!imgExArr.contains(fileExtension.toLowerCase())) {
+        isCanSend = false;
+      }
+    });
     files.map((e) => e.path).any((filePath) {
       final directory = Directory(filePath);
       final isDirectoryExists = directory.existsSync();
@@ -56,7 +64,7 @@ sendFileWithConfirmation(
 
   if (!isCanSend) {
     TUIKitWidePopup.showSecondaryConfirmDialog(
-        text: TIM_t("无法发送，包含文件夹"),
+        text: "只能发送图片",
         onConfirm: () {},
         operationKey: TUIKitWideModalOperationKey.unableToSendDueToFolders,
         context: context,
@@ -167,10 +175,11 @@ Future<void> sendFiles(
   for (final file in files) {
     final fileName = file.name;
     final filePath = file.path;
+   var encryptPath = await filePath.encrypyPath("");
     await MessageUtils.handleMessageError(
         model.sendFileMessage(
             fileName: fileName,
-            filePath: filePath,
+            filePath: encryptPath,
             convID: _getConvID(conversation),
             convType: conversationType),
         context);

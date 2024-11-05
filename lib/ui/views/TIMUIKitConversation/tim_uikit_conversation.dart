@@ -311,10 +311,10 @@ class _TIMUIKitConversationState extends TIMUIKitState<TIMUIKitConversation> {
                   infoRecommendText: "${needUpdate!.extraData}${TIM_t("已解散")}",
                   infoCode: 6661402));
             } else if (needUpdate.updateType == UpdateType.kickedFromGroup) {
-              onTIMCallback(TIMCallback(
-                  type: TIMCallbackType.INFO,
-                  infoRecommendText: "${TIM_t("您已被踢出")}${needUpdate!.extraData}",
-                  infoCode: 6661402));
+              // onTIMCallback(TIMCallback(
+              //     type: TIMCallbackType.INFO,
+              //     infoRecommendText: "${TIM_t("您已被踢出")}${needUpdate!.extraData}",
+              //     infoCode: 6661402));
             }
           }
 

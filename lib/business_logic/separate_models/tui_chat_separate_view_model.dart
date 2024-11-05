@@ -1424,6 +1424,11 @@ class TUIChatSeparateViewModel extends ChangeNotifier {
           message.cloudCustomData =
               jsonEncode({"isRevoke": true, "revokeByAdmin": isAdmin});
         }
+        final res = await _messageService.revokeMessage(
+            msgID: msgID, webMessageInstance: webMessageInstance);
+        if (res.code == 0) {
+          globalModel.onMessageRevoked(msgID, conversationID);
+        }
         return await modifyMessage(message: message);
       }
     }

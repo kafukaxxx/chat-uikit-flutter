@@ -255,7 +255,7 @@ class TIMUIKitChatConfig {
       this.timeDividerConfig,
       this.desktopStickerPanelHeight = 400,
       this.stickerPanelConfig,
-      this.isGroupAdminRecallEnabled = false,
+      this.isGroupAdminRecallEnabled = true,
       this.isAutoReportRead = true,
       this.faceURIPrefix,
       this.faceURISuffix,

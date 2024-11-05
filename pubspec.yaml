@@ -78,6 +78,8 @@ dependencies:
   logger: ^2.0.1
   image_clipboard: ^1.0.0+2
   flutter_easyloading: ^3.0.3
+  flutter_cache_manager: ^3.0.0
+  just_audio_windows: ^0.2.0
   wb_flutter_tool:
     path:  ../../wb_flutter_tool
 

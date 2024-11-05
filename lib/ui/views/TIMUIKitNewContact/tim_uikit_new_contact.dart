@@ -8,6 +8,7 @@ import 'package:tencent_cloud_chat_uikit/tencent_cloud_chat_uikit.dart';
 import 'package:tencent_cloud_chat_uikit/ui/utils/screen_utils.dart';
 import 'package:tencent_cloud_chat_uikit/base_widgets/tim_ui_kit_base.dart';
 import 'package:tencent_cloud_chat_uikit/ui/widgets/avatar.dart';
+import 'package:wb_flutter_tool/wb_flutter_tool.dart';
 
 typedef NewContactItemBuilder = Widget Function(
     BuildContext context, V2TimFriendApplication applicationInfo);
@@ -140,10 +141,13 @@ class _TIMUIKitNewContactState extends TIMUIKitState<TIMUIKitNewContact> {
                           ),
                         ),
                         onTap: () async {
-                          await model.acceptFriendApplication(
+                          V2TimFriendOperationResult? resu = await model.acceptFriendApplication(
                             applicationInfo.userID,
                             applicationInfo.type,
                           );
+                          if (resu?.resultCode == 0) {
+                            _sendHelloToFriend(applicationInfo.userID);
+                          }
                           model.loadData();
                           if (widget.onAccept != null) {
                             widget.onAccept!(applicationInfo);
@@ -227,5 +231,42 @@ class _TIMUIKitNewContactState extends TIMUIKitState<TIMUIKitNewContact> {
 
           return Container();
         });
+  }
+  _sendHelloToFriend(String userId) async{
+    // 创建文本消息
+    V2TimValueCallback<V2TimMsgCreateInfoResult> createTextMessageRes =
+    await TencentImSDKPlugin.v2TIMManager
+        .getMessageManager()
+        .createTextMessage(
+      text: AESTools.encryptString("{\"original\":\"你好\"}"), // 文本信息
+    );
+    if (createTextMessageRes.code == 0) {
+      // 文本信息创建成功
+      String? id = createTextMessageRes.data?.id;
+      // 发送文本消息
+      // 在sendMessage时，若只填写receiver则发个人用户单聊消息
+      //                 若只填写groupID则发群组消息
+      //                 若填写了receiver与groupID则发群内的个人用户，消息在群聊中显示，只有指定receiver能看见
+      V2TimValueCallback<V2TimMessage> sendMessageRes =
+      await TencentImSDKPlugin.v2TIMManager.getMessageManager().sendMessage(
+          id: id!, // 创建的messageid
+          receiver: userId, // 接收人id
+          groupID: "", // 接收群组id
+          priority: MessagePriorityEnum.V2TIM_PRIORITY_DEFAULT, // 消息优先级
+          onlineUserOnly:
+          false, // 是否只有在线用户才能收到，如果设置为 true ，接收方历史消息拉取不到，常被用于实现“对方正在输入”或群组里的非重要提示等弱提示功能，该字段不支持 AVChatRoom。
+          isExcludedFromUnreadCount: false, // 发送消息是否计入会话未读数
+          isExcludedFromLastMessage: false, // 发送消息是否计入会话 lastMessage
+          needReadReceipt:
+          false, // 消息是否需要已读回执（只有 Group 消息有效，6.1 及以上版本支持，需要您购买旗舰版套餐）
+          offlinePushInfo: OfflinePushInfo(title: "您有一条新消息"), // 离线推送时携带的标题和内容
+          cloudCustomData: "", // 消息云端数据，消息附带的额外的数据，存云端，消息的接收者可以访问到
+          localCustomData:
+          "" // 消息本地数据，消息附带的额外的数据，存本地，消息的接收者不可以访问到，App 卸载后数据丢失
+      );
+      if (sendMessageRes.code == 0) {
+        // 发送成功
+      }
+    }
   }
 }

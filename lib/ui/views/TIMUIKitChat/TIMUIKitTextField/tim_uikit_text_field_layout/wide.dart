@@ -30,11 +30,13 @@ import 'package:tencent_cloud_chat_uikit/ui/utils/optimize_utils.dart';
 import 'package:tencent_cloud_chat_uikit/ui/utils/platform.dart';
 import 'package:tencent_cloud_chat_uikit/ui/utils/screen_shot.dart';
 import 'package:tencent_cloud_chat_uikit/ui/views/TIMUIKitChat/TIMUIKitTextField/special_text/DefaultSpecialTextSpanBuilder.dart';
+import 'package:tencent_cloud_chat_uikit/ui/views/TIMUIKitChat/tim_uikit_send_file.dart';
 import 'package:tencent_cloud_chat_uikit/ui/widgets/drag_widget.dart';
 import 'package:tencent_cloud_chat_uikit/ui/widgets/wide_popup.dart';
 import 'package:universal_html/html.dart' as html;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:uuid/uuid.dart';
+import 'package:wb_flutter_tool/im_tool/wb_ext_file_path.dart';
 import 'package:wb_flutter_tool/wb_flutter_tool.dart' hide PlatformUtils;
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 
@@ -204,6 +206,7 @@ class _TIMUIKitTextFieldLayoutWideState extends TIMUIKitState<TIMUIKitTextFieldL
   late ScrollController _scrollController;
   late FocusNode textFocusNode;
   late List<DesktopControlBarItem> defaultControlBarItems;
+  bool isInsertFromInput = true;
 
   @override
   void initState() {
@@ -463,7 +466,7 @@ class _TIMUIKitTextFieldLayoutWideState extends TIMUIKitState<TIMUIKitTextFieldL
     try {
       final convID = widget.conversationID;
       final convType = widget.conversationType;
-      FilePickerResult? result = await FilePicker.platform.pickFiles();
+      FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.image);
       _removeOverlay();
       if (result != null && result.files.isNotEmpty) {
         if (PlatformUtils().isWeb) {
@@ -478,9 +481,11 @@ class _TIMUIKitTextFieldLayoutWideState extends TIMUIKitState<TIMUIKitTextFieldL
           File file = File(result.files.single.path!);
           final int size = file.lengthSync();
           final String savePath = file.path;
-
+          var encryptPath = await savePath.encrypyPath("");
+          File encFile = File(encryptPath);
+          final int encSize = encFile.lengthSync();
           MessageUtils.handleMessageError(
-              model.sendFileMessage(filePath: savePath, size: size, convID: convID, convType: convType), context);
+              model.sendFileMessage(filePath: encryptPath, size: 0, convID: convID, convType: convType), context);
         }
       } else {
         throw TypeError();
@@ -673,17 +678,13 @@ class _TIMUIKitTextFieldLayoutWideState extends TIMUIKitState<TIMUIKitTextFieldL
             MessageUtils.handleMessageError(
                 model.sendImageMessage(imagePath: savePath, convID: convID, convType: convType), context);
           } else if (type == "video") {
-            String tempPath = (await getTemporaryDirectory()).path + p.basename(savePath) + ".jpeg";
-            await plugin.getVideoThumbnail(
-              srcFile: savePath,
-              destFile: tempPath,
-              format: 'jpeg',
-              width: 128,
-              quality: 100,
-              height: 128,
-            );
+            var coverPath = (await getTemporaryDirectory()).path + "videoCover.jpeg";
+            ByteData bytes = await rootBundle.load("assets/video.jpeg");
+            final coverdata = bytes.buffer.asUint8List();
+            File(coverPath)..createSync(recursive: true)..writeAsBytesSync(coverdata);
+            var encryptPath = await savePath.encryptVideo("");
             MessageUtils.handleMessageError(
-                model.sendVideoMessage(videoPath: savePath, convID: convID, convType: convType, snapshotPath: tempPath),
+                model.sendVideoMessage(videoPath: encryptPath, convID: convID, convType: convType, snapshotPath: coverPath),
                 context);
           }
         } else {
@@ -696,7 +697,26 @@ class _TIMUIKitTextFieldLayoutWideState extends TIMUIKitState<TIMUIKitTextFieldL
       onTIMCallback(TIMCallback(type: TIMCallbackType.INFO, infoRecommendText: TIM_t("视频文件异常"), infoCode: 6660415));
     }
   }
+  void pasteImageSend(String filePath) async{
+    File file = File(filePath);
+    final String savePath = file.path;
 
+
+    var encryptPath = await savePath.encrypyPath("");
+   File imgFile = File(encryptPath);
+    int fileSize = imgFile.readAsBytesSync().length;
+    MessageUtils.handleMessageError(
+        widget.model.sendFileMessage(convID: widget.conversationID,
+          convType: widget.conversationType,
+          filePath: encryptPath,
+          size: 0), context);
+    // widget.model.sendImageMessage(
+    //     imagePath: filePath,
+    //     imageName: fileName,
+    //     convID: widget.conversationID,
+    //     convType: widget.conversationType),
+    // context);
+  }
   _sendImageWithConfirmation({String? fileName, Size? fileSize, required String filePath}) async {
     final option1 =
         widget.currentConversation.showName ?? (widget.conversationType == ConvType.group ? TIM_t("群聊") : TIM_t("对方"));
@@ -745,13 +765,7 @@ class _TIMUIKitTextFieldLayoutWideState extends TIMUIKitState<TIMUIKitTextFieldL
                 ),
                 ElevatedButton(
                     onPressed: () {
-                      MessageUtils.handleMessageError(
-                          widget.model.sendImageMessage(
-                              imagePath: filePath,
-                              imageName: fileName,
-                              convID: widget.conversationID,
-                              convType: widget.conversationType),
-                          context);
+                      pasteImageSend(filePath);
                       closeFunc();
                     },
                     child: Text(TIM_t("发送")))
@@ -792,11 +806,11 @@ class _TIMUIKitTextFieldLayoutWideState extends TIMUIKitState<TIMUIKitTextFieldL
       if (config.showSendFileButton)
         DesktopControlBarItem(
             item: "file",
-            showName: TIM_t("文件"),
+            showName: TIM_t("图片"),
             onClick: (offset) {
               _sendFile(widget.model, widget.theme);
             },
-            svgPath: "images/svg/send_file.svg"),
+            svgPath: "images/svg/send_image.svg"),
       if (config.showSendImageButton)
         DesktopControlBarItem(
             item: "photo",
@@ -866,6 +880,17 @@ class _TIMUIKitTextFieldLayoutWideState extends TIMUIKitState<TIMUIKitTextFieldL
   }
 
   Future<void> _handleKeyEvent(RawKeyEvent event) async {
+    if ( PlatformUtils().isDesktop && event.logicalKey == LogicalKeyboardKey.insert && isInsertFromInput == true) {
+      isInsertFromInput = false;
+      var text = await Pasteboard.text;
+      // print('快捷键进来:${event.logicalKey},,,,$text');
+      setState(() {
+        widget.textEditingController.text = widget.textEditingController.text + (text ?? '');
+      });
+      Future.delayed(const Duration(milliseconds: 100),() {
+        isInsertFromInput = true;
+      });
+    }
     if (PlatformUtils().isDesktop &&
         ((event.isKeyPressed(LogicalKeyboardKey.controlLeft) && event.logicalKey == LogicalKeyboardKey.keyV) ||
             (event.isMetaPressed && event.logicalKey == LogicalKeyboardKey.keyV))) {
