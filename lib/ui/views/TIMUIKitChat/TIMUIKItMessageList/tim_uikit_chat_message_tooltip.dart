@@ -5,6 +5,7 @@ import 'dart:io';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:image_clipboard/image_clipboard.dart';
 import 'package:open_file/open_file.dart';
@@ -104,8 +105,30 @@ class TIMUIKitMessageTooltipState
   @override
   void initState() {
     super.initState();
-    hasFile();
+    // hasFile();
+    getImgUrl();
     isShowMoreSticker = widget.isShowMoreSticker;
+  }
+  getImgUrl() async {
+
+    if (widget.message.fileElem != null) {
+      late String imgUrl;
+      if (widget.message.fileElem?.url?.isNotEmpty ?? false) {
+        imgUrl = widget.message.fileElem?.url ?? "";
+      }else {
+        var resp = await globalModal.getOnlineUrl(widget.message.msgID ?? "");
+        print("gettted file url:${resp.data?.fileElem?.url}");
+        setState(() {
+          imgUrl = resp.data?.fileElem?.url ?? "";
+        });
+      }
+      var opfile = await DefaultCacheManager().getSingleFile(
+          imgUrl);
+      filePath = await opfile.path;
+
+
+    }
+
   }
 
   hasFile() {
@@ -224,8 +247,7 @@ class TIMUIKitMessageTooltipState
     final messageCanCopy = widget.message.elemType ==
             MessageElemType.V2TIM_ELEM_TYPE_TEXT ||
         (isDesktopScreen &&
-            widget.message.elemType == MessageElemType.V2TIM_ELEM_TYPE_FILE &&
-            fileBeenDownloaded);
+            widget.message.elemType == MessageElemType.V2TIM_ELEM_TYPE_FILE );
     bool fileCanTransfer = true;
     bool fileCanMutilSelect = true;
     if (message.elemType == 2) {

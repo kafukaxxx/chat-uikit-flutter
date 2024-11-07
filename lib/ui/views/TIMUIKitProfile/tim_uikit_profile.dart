@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:provider/provider.dart';
 import 'package:tencent_cloud_chat_uikit/base_widgets/tim_ui_kit_state.dart';
@@ -10,7 +11,11 @@ import 'package:tencent_cloud_chat_uikit/tencent_cloud_chat_uikit.dart';
 import 'package:tencent_cloud_chat_uikit/base_widgets/tim_ui_kit_base.dart';
 import 'package:tencent_cloud_chat_uikit/ui/utils/screen_utils.dart';
 import 'package:tencent_cloud_chat_uikit/ui/views/TIMUIKitProfile/profile_widget.dart';
+import 'package:tencent_cloud_chat_uikit/ui/views/TIMUIKitProfile/widget/Dgg_profile_widget.dart';
 import 'package:tencent_cloud_chat_uikit/ui/views/TIMUIKitProfile/widget/tim_uikit_profile_widget.dart';
+import 'package:wb_flutter_tool/popup/jw_popup.dart';
+
+import '../TIMUIKitConversation/dgg_transfer_conversation_list.dart';
 
 typedef OnSelfAvatarTap = void Function();
 
@@ -459,7 +464,43 @@ class _TIMUIKitProfileState extends TIMUIKitState<TIMUIKitProfile> {
                       ? customBuilder?.customBuilderFive!(
                           isFriend, userInfo, conversation)
                       // Please define the corresponding custom widget in `profileWidgetBuilder` before using it here.
-                      : Text(TIM_t("如使用自定义区域，请在profileWidgetBuilder传入对应组件")))!;
+                      : DggProfileWidget.shareUserCard(
+                     theme,
+                      (){
+                        showPopupWindow(context: context, offset: Offset(0, 0),emptyDismissable: true,
+                            windowBuilder: (context,from,to){
+                          return Center(
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(4),
+                              child: Container(
+                                width: MediaQuery.of(context).size.width*0.3,
+                                height: MediaQuery.of(context).size.height*0.6,
+                                color: Colors.white,
+                                child: Stack(
+                                  children: [
+                                    Positioned(right: 0,child: TextButton(child: Text("转发",style: TextStyle(fontSize: 14,color: theme.primaryColor),),onPressed: ()async{
+                                      if (_selConvs.length > 0) {
+                                        EasyLoading.show();
+                                        for (var conv in _selConvs) {
+                                          await sendGroupCardToConversation(conv!);
+                                        }
+                                        EasyLoading.dismiss();
+                                        Navigator.pop(context);
+                                      }
+                                    },)),
+                                    Positioned(left: 0,right: 0,bottom: 0,top: 40,child: DggTransferConversationList(onChanged: (convs) {
+                                      _selConvs = convs;
+                                    },))
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        });
+
+                      },
+                    context
+                  ))!;
 
                 default:
                   return Container();
@@ -487,5 +528,28 @@ class _TIMUIKitProfileState extends TIMUIKitState<TIMUIKitProfile> {
         },
       ),
     );
+  }
+  List<V2TimConversation?> _selConvs = [];
+
+  Future<bool> sendGroupCardToConversation(V2TimConversation conv) async{
+    var dic = '{"businessID":"dgg_businessId","userID":"${_model.userProfile?.friendInfo?.userID ?? ""}","nickName":"${_model.userProfile?.friendInfo?.userProfile?.nickName ?? (_model.userProfile?.friendInfo?.userID)}","faceURL":"${_model.userProfile?.friendInfo?.userProfile?.faceUrl ?? ""}"}';
+    V2TimValueCallback<V2TimMsgCreateInfoResult> createCustomMessageRes = await TencentImSDKPlugin.v2TIMManager.getMessageManager().createCustomMessage(
+      data: dic,
+
+    );
+    if(createCustomMessageRes.code == 0){
+      String? id =  createCustomMessageRes.data?.id;
+      // 发送自定义消息
+
+      V2TimValueCallback<V2TimMessage> sendMessageRes = await TencentImSDKPlugin.v2TIMManager.getMessageManager().sendMessage(
+          id: id!,
+          receiver: conv.userID ?? "",
+          groupID: conv.groupID ?? "");
+      if(sendMessageRes.code == 0){
+        // 发送成功
+        return true;
+      }
+    }
+    return false;
   }
 }

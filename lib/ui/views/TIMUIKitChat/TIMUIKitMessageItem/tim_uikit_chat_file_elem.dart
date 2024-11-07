@@ -26,6 +26,8 @@ import 'package:wb_flutter_tool/im_tool/wb_ext_file_path.dart';
 import 'package:wb_flutter_tool/wb_flutter_tool.dart' hide PlatformUtils;
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 
+import '../../../widgets/image_screen.dart';
+
 class TIMUIKitFileElem extends StatefulWidget {
   final String? messageID;
   final V2TimFileElem? fileElem;
@@ -100,7 +102,7 @@ class _TIMUIKitFileElemState extends TIMUIKitState<TIMUIKitFileElem> {
   }
   getImgUrl() async {
     var resp = await model.getOnlineUrl(widget.messageID ?? "");
-    print("gettted file url:${widget.fileElem?.url}");
+    print("gettted file url:${resp.data?.fileElem?.url}");
     setState(() {
       imgUrl = resp.data?.fileElem?.url ?? "";
     });
@@ -433,14 +435,14 @@ class _TIMUIKitFileElemState extends TIMUIKitState<TIMUIKitFileElem> {
                 //用电脑自带插件打开，客户觉得卡 、改成有弹窗打开
                 // print("decodeUrl:$decodeUrl");
                 // outputLogger.i("decodeUrl:$decodeUrl");
-                OpenFile.open(decodeUrl);
-                // Navigator.of(context).push(
-                //   PageRouteBuilder(
-                //     opaque: false, // set to false
-                //     pageBuilder: (_, __, ___) => ImageScreen(
-                //         imageProvider: getImageProvider(decodeUrl), heroTag: decodeUrl),
-                //   ),
-                // );
+                // OpenFile.open(decodeUrl);
+                Navigator.of(context).push(
+                  PageRouteBuilder(
+                    opaque: false, // set to false
+                    pageBuilder: (_, __, ___) => ImageScreen(
+                        imageProvider: getImageProvider(decodeUrl), heroTag: decodeUrl),
+                  ),
+                );
                 return;
               }
 
@@ -514,6 +516,22 @@ class _TIMUIKitFileElemState extends TIMUIKitState<TIMUIKitFileElem> {
         //   ),
       ],
     );
+  }
+  ImageProvider getImageProvider(String? url) {
+    ImageProvider defaultAvatar() {
+      return Image.asset('tencent_cloud_chat_uikit').image;
+    }
+    if (imgUrl.isNotEmpty) {
+      if(url?.isNotEmpty ?? false) {
+        return Image.file(File(url ?? ""),width: 200,).image;
+      } else if (decryptLocalPath.isNotEmpty) {
+        return Image.file(File(decryptLocalPath),width: 200,).image;
+      }
+      return defaultAvatar();
+    } else {
+      // WBToastUtil.showToastCenter("图片解析失败");
+      return defaultAvatar();
+    }
   }
   Uint8List _getFlutterCachedImg(File filex) {
     try {

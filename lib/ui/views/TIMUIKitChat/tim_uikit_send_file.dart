@@ -16,6 +16,8 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:wb_flutter_tool/im_tool/wb_ext_file_path.dart';
 import 'package:wb_flutter_tool/wb_flutter_tool.dart' hide PlatformUtils;
 import 'TIMUIKitMessageItem/tim_uikit_chat_file_icon.dart';
+import 'package:just_audio/just_audio.dart';
+
 
 String _getConvID(V2TimConversation conversation) {
   return (conversation.type == 1
@@ -36,7 +38,7 @@ sendFileWithConfirmation(
   if (!PlatformUtils().isWeb) {
     files.forEach((e) {
       String fileExtension = path.extension(e.path);
-      List<String> imgExArr = [".jpg",".jpeg",".png",".gif"];
+      List<String> imgExArr = [".jpg",".jpeg",".png",".gif",".wav",".mp3"];
       if (!imgExArr.contains(fileExtension.toLowerCase())) {
         isCanSend = false;
       }
@@ -64,7 +66,7 @@ sendFileWithConfirmation(
 
   if (!isCanSend) {
     TUIKitWidePopup.showSecondaryConfirmDialog(
-        text: "只能发送图片",
+        text: "只能发送图片或音频",
         onConfirm: () {},
         operationKey: TUIKitWideModalOperationKey.unableToSendDueToFolders,
         context: context,
@@ -175,14 +177,29 @@ Future<void> sendFiles(
   for (final file in files) {
     final fileName = file.name;
     final filePath = file.path;
-   var encryptPath = await filePath.encrypyPath("");
-    await MessageUtils.handleMessageError(
-        model.sendFileMessage(
-            fileName: fileName,
-            filePath: encryptPath,
-            convID: _getConvID(conversation),
-            convType: conversationType),
-        context);
+    if (fileName.contains(".wav") || fileName.contains(".mp3")) {
+      final player = AudioPlayer();
+      var duration = await player.setAudioSource(AudioSource.file(filePath),
+          initialPosition: Duration.zero, preload: true);
+
+      await MessageUtils.handleMessageError(
+          model.sendSoundMessage(
+              soundPath: filePath,
+          duration: duration?.inSeconds ?? 0,
+              convID: _getConvID(conversation),
+              convType: conversationType),
+          context);
+    }else {
+      var encryptPath = await filePath.encrypyPath("");
+      await MessageUtils.handleMessageError(
+          model.sendFileMessage(
+              fileName: fileName,
+              filePath: encryptPath,
+              convID: _getConvID(conversation),
+              convType: conversationType),
+          context);
+    }
+   
     await Future.delayed(const Duration(microseconds: 300));
   }
 }

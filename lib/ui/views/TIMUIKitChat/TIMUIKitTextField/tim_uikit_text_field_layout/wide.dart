@@ -879,7 +879,24 @@ class _TIMUIKitTextFieldLayoutWideState extends TIMUIKitState<TIMUIKitTextFieldL
     }
   }
 
-  Future<void> _handleKeyEvent(RawKeyEvent event) async {
+  Future<void> _handleKeyEvent(KeyEvent event) async {
+    if (PlatformUtils().isDesktop && event.logicalKey == LogicalKeyboardKey.controlLeft) {
+      if (HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.controlLeft)) {
+        if (!HardwareKeyboard.instance.isPhysicalKeyPressed(PhysicalKeyboardKey.controlLeft) && isInsertFromInput) {
+          isInsertFromInput = false;
+          var text = await Pasteboard.text;
+          // print('快捷键进来:${event.logicalKey},,,,$text');
+          setState(() {
+            widget.textEditingController.text = widget.textEditingController.text + (text ?? '');
+          });
+          Future.delayed(const Duration(milliseconds: 100),() {
+            isInsertFromInput = true;
+          });
+        }
+
+      }
+
+    }
     if ( PlatformUtils().isDesktop && event.logicalKey == LogicalKeyboardKey.insert && isInsertFromInput == true) {
       isInsertFromInput = false;
       var text = await Pasteboard.text;
@@ -892,8 +909,8 @@ class _TIMUIKitTextFieldLayoutWideState extends TIMUIKitState<TIMUIKitTextFieldL
       });
     }
     if (PlatformUtils().isDesktop &&
-        ((event.isKeyPressed(LogicalKeyboardKey.controlLeft) && event.logicalKey == LogicalKeyboardKey.keyV) ||
-            (event.isMetaPressed && event.logicalKey == LogicalKeyboardKey.keyV))) {
+        ((HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.controlLeft) && event.logicalKey == LogicalKeyboardKey.keyV) ||
+            (HardwareKeyboard.instance.isMetaPressed && event.logicalKey == LogicalKeyboardKey.keyV))) {
       final bytes = await Pasteboard.image;
       if (bytes != null) {
         String directory;
@@ -942,9 +959,9 @@ class _TIMUIKitTextFieldLayoutWideState extends TIMUIKitState<TIMUIKitTextFieldL
       bottomPadding = padding.bottom;
     }
 
-    return RawKeyboardListener(
+    return KeyboardListener(
         focusNode: textFocusNode,
-        onKey: _handleKeyEvent,
+        onKeyEvent: _handleKeyEvent,
         child: Container(
           color: widget.backgroundColor ?? theme.desktopChatMessageInputBgColor,
           child: Column(
@@ -1008,6 +1025,29 @@ class _TIMUIKitTextFieldLayoutWideState extends TIMUIKitState<TIMUIKitTextFieldL
                   ],
                 ),
               ),
+              Container(
+                margin: EdgeInsets.only(right: 15,bottom: 15),
+                child: Row(
+                  children: [
+                    Spacer(),
+                    GestureDetector(
+                      child: Container(
+                        height: 30,
+                        width: 70,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.all(Radius.circular(15)),
+                          color: Colors.blueAccent,
+                        ),
+                        child: Text("发送",style: TextStyle(color: Colors.white),),
+                      ),
+                      onTap: (){
+                        widget.onEmojiSubmitted();
+                      },
+                    )
+                  ],
+                ),
+              )
             ],
           ),
         ));
