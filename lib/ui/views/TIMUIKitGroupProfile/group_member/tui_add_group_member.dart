@@ -24,7 +24,21 @@ class _AddGroupMemberPageState extends TIMUIKitState<AddGroupMemberPage> {
   void submitAdd() async {
     if (selectedContacts.isNotEmpty) {
       final userIDs = selectedContacts.map((e) => e.userID).toList();
-      await widget.model.inviteUserToGroup(userIDs);
+      // print("userIDS:${userIDs}");
+      if (userIDs.length > 20) {
+        int count = ((userIDs.length + 19)/20).toInt();
+        for (int i = 0; i < count; i++) {
+          var end = (i+1)*20;
+          if (end > userIDs.length) {
+            end = userIDs.length;
+          }
+          var arrs = userIDs.sublist(i*20,end);
+          // print("选中的数组：${arrs}");
+          await widget.model.inviteUserToGroup(arrs);
+        }
+      }else {
+        await widget.model.inviteUserToGroup(userIDs);
+      }
       widget.onClose ?? Navigator.pop(context);
     }
   }
