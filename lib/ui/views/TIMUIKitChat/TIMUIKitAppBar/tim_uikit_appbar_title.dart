@@ -23,7 +23,7 @@ class TIMUIKitAppBarTitle extends StatelessWidget {
   Widget titleText(String text){
     return InkWell(
       onTapDown: onClick,
-      child: Text(
+      child: SelectableText(
         text,
         style: textStyle ??
             const TextStyle(

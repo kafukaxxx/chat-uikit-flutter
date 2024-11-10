@@ -207,6 +207,7 @@ class _TIMUIKitTextFieldLayoutWideState extends TIMUIKitState<TIMUIKitTextFieldL
   late FocusNode textFocusNode;
   late List<DesktopControlBarItem> defaultControlBarItems;
   bool isInsertFromInput = true;
+  final FocusNode enterFocus = FocusNode();
 
   @override
   void initState() {
@@ -723,58 +724,74 @@ class _TIMUIKitTextFieldLayoutWideState extends TIMUIKitState<TIMUIKitTextFieldL
     final size = fileSize ?? await ScreenshotHelper.getImageSize(filePath);
 
     TUIKitWidePopup.showPopupWindow(
-      operationKey: TUIKitWideModalOperationKey.beforeSendScreenShot,
+      operationKey: TUIKitWideModalOperationKey.custom,
       context: context,
       isDarkBackground: false,
       width: 500,
       height: min(500, size.height / 2 + 140),
       title: TIM_t_para("发送给{{option1}}", "发送给$option1")(option1: option1),
-      child: (closeFunc) => Container(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            SizedBox(
-              height: min(360, size.height / 2),
-              child: InkWell(
-                onTap: () {
-                  launchUrl(PlatformUtils().isWeb ? Uri.parse(filePath) : Uri.file(filePath));
-                },
-                child: PlatformUtils().isWeb
-                    ? Image.network(
-                        filePath,
-                        height: min(360, size.height / 2),
-                      )
-                    : Image.file(
-                        File(filePath),
-                        height: min(360, size.height / 2),
-                      ),
-              ),
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              mainAxisSize: MainAxisSize.max,
-              children: [
-                OutlinedButton(
-                    onPressed: () {
-                      closeFunc();
-                    },
-                    child: Text(TIM_t("取消"))),
-                const SizedBox(
-                  width: 20,
+      child: (closeFunc) => KeyboardListener(
+        focusNode: enterFocus,
+        autofocus: false,
+        onKeyEvent:  (event) {
+          if (event.logicalKey == LogicalKeyboardKey.enter) {
+            pasteImageSend(filePath);
+            closeFunc();
+          }
+        },
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              SizedBox(
+                height: min(360, size.height / 2),
+                child: InkWell(
+                  onTap: () {
+                    launchUrl(PlatformUtils().isWeb ? Uri.parse(filePath) : Uri.file(filePath));
+                  },
+                  child: PlatformUtils().isWeb
+                      ? Image.network(
+                          filePath,
+                          height: min(360, size.height / 2),
+                        )
+                      : Image.file(
+                          File(filePath),
+                          height: min(360, size.height / 2),
+                        ),
                 ),
-                ElevatedButton(
-                    onPressed: () {
-                      pasteImageSend(filePath);
-                      closeFunc();
-                    },
-                    child: Text(TIM_t("发送")))
-              ],
-            )
-          ],
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                mainAxisSize: MainAxisSize.max,
+                children: [
+                  OutlinedButton(
+                      onPressed: () {
+                        closeFunc();
+                      },
+                      child: Text(TIM_t("取消"))),
+                  const SizedBox(
+                    width: 20,
+                  ),
+                  ElevatedButton(
+                      onPressed: () {
+                        pasteImageSend(filePath);
+                        closeFunc();
+                      },
+                      child: Text(TIM_t("发送")))
+                ],
+              )
+            ],
+          ),
         ),
       ),
     );
+    Future.delayed(Duration(milliseconds: 50),(){
+      enterFocus.requestFocus();
+
+    });
+
+
   }
 
   _sendScreenShot() async {
