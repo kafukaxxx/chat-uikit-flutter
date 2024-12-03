@@ -1,6 +1,7 @@
 // ignore_for_file: unnecessary_getters_setters, avoid_print
 
 import 'package:flutter/cupertino.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:tencent_cloud_chat_uikit/business_logic/life_cycle/group_profile_life_cycle.dart';
 import 'package:tencent_cloud_chat_uikit/data_services/conversation/conversation_services.dart';
 import 'package:tencent_cloud_chat_uikit/data_services/core/core_services_implements.dart';
@@ -67,12 +68,13 @@ class TUIGroupProfileModel extends ChangeNotifier {
 
   void loadData(String groupID) async{
     _groupID = groupID;
-
+    EasyLoading.show();
     await loadGroupInfo(groupID);
     dggLoadInfo();
     await _loadContactList();
     await loadGroupMemberList(groupID: groupID);
     await _loadConversation();
+    EasyLoading.dismiss();
 
   }
   dggLoadInfo() async {
