@@ -9,12 +9,16 @@ class TIMUIKitAppBarTitle extends StatelessWidget {
   final bool showC2cMessageEditStatus;
   final String fromUser;
   final GestureTapDownCallback? onClick;
+  final String? timeIp;
+  final String? address;
   final TextStyle? textStyle;
 
   const TIMUIKitAppBarTitle(
       {Key? key,
       this.title,
       this.textStyle,
+        this.timeIp,
+        this.address,
       required this.conversationShowName,
       required this.showC2cMessageEditStatus,
       required this.fromUser, this.onClick})
@@ -23,13 +27,23 @@ class TIMUIKitAppBarTitle extends StatelessWidget {
   Widget titleText(String text){
     return InkWell(
       onTapDown: onClick,
-      child: SelectableText(
-        text,
-        style: textStyle ??
-            const TextStyle(
-              color: Colors.white,
-              fontSize: 17,
-            ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SelectableText(  
+            text,
+            style: textStyle ??
+                const TextStyle(
+                  color: Colors.white,
+                  fontSize: 17,
+                ),
+          ),
+          Offstage(
+            offstage: (timeIp == null && address == null) || (timeIp == "" && address == ""),
+            child: Text("${timeIp}  (${address})",style: TextStyle(fontSize: 10,color: Colors.grey),),
+          )
+        ],
       ),
     );
   }

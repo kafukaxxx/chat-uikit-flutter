@@ -12,6 +12,7 @@ import 'package:tencent_cloud_chat_uikit/ui/views/TIMUIKitChat/TIMUIKitTextField
 import 'package:tencent_cloud_chat_uikit/ui/widgets/link_preview/link_preview_entry.dart';
 import 'package:tencent_cloud_chat_uikit/ui/widgets/link_preview/widgets/link_preview.dart';
 import 'TIMUIKitMessageReaction/tim_uikit_message_reaction_show_panel.dart';
+import 'dgg_custextselection_controls.dart';
 
 class TIMUIKitTextElem extends StatefulWidget {
   final V2TimMessage message;
@@ -231,29 +232,35 @@ class _TIMUIKitTextElemState extends TIMUIKitState<TIMUIKitTextElem> {
                           fontSize: isDesktopScreen ? 14 : 16,
                           textBaseline: TextBaseline.ideographic,
                           height: widget.chatModel.chatConfig.textHeight))
-              : ExtendedText(widget.message.textElem?.text ?? "",
-                  softWrap: true,
-                  style: widget.fontStyle ??
-                      TextStyle(
-                          fontSize: isDesktopScreen ? 14 : 16,
-                          height: widget.chatModel.chatConfig.textHeight),
-                  specialTextSpanBuilder: DefaultSpecialTextSpanBuilder(
-                    isUseQQPackage: (widget
-                                .chatModel
-                                .chatConfig
-                                .stickerPanelConfig
-                                ?.useTencentCloudChatStickerPackage ??
-                            true) ||
-                        widget.isUseDefaultEmoji,
-                    isUseTencentCloudChatPackage: widget
-                            .chatModel
-                            .chatConfig
-                            .stickerPanelConfig
-                            ?.useTencentCloudChatStickerPackage ??
-                        true,
-                    customEmojiStickerList: widget.customEmojiStickerList,
-                    showAtBackground: true,
-                  )),
+              : SelectionArea(
+            selectionControls: CustomTextSelectionControls(),
+
+                child: ExtendedText(widget.message.textElem?.text ?? "",
+                    softWrap: true,
+                selectionColor: Colors.blue,
+                    canSelectPlaceholderSpan: false,
+                    style: widget.fontStyle ??
+                        TextStyle(
+                            fontSize: isDesktopScreen ? 14 : 16,
+                            height: widget.chatModel.chatConfig.textHeight),
+                    specialTextSpanBuilder: DefaultSpecialTextSpanBuilder(
+                      isUseQQPackage: (widget
+                                  .chatModel
+                                  .chatConfig
+                                  .stickerPanelConfig
+                                  ?.useTencentCloudChatStickerPackage ??
+                              true) ||
+                          widget.isUseDefaultEmoji,
+                      isUseTencentCloudChatPackage: widget
+                              .chatModel
+                              .chatConfig
+                              .stickerPanelConfig
+                              ?.useTencentCloudChatStickerPackage ??
+                          true,
+                      customEmojiStickerList: widget.customEmojiStickerList,
+                      showAtBackground: true,
+                    )),
+              ),
           // If the link preview info is available, render the preview card.
           if (_renderPreviewWidget() != null &&
               widget.chatModel.chatConfig.urlPreviewType ==

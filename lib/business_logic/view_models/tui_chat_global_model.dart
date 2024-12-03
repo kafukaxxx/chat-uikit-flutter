@@ -19,6 +19,7 @@ import 'package:tencent_cloud_chat_uikit/tencent_cloud_chat_uikit.dart';
 import 'package:tencent_cloud_chat_uikit/ui/constants/history_message_constant.dart';
 import 'package:tencent_cloud_chat_uikit/ui/utils/logger.dart';
 import 'package:tencent_cloud_chat_uikit/ui/utils/message.dart';
+import 'package:wb_flutter_tool/wb_flutter_tool.dart';
 
 import '../../ui/controller/tim_uikit_chat_controller.dart';
 
@@ -70,6 +71,7 @@ class TUIChatGlobalModel extends ChangeNotifier implements TIMUIKitClass {
   List<String> _receivedMsgIds = [];
   TUIChatGlobalModel() {
     _player.setAsset("assets/wechat.mp3");
+
     advancedMsgListener = V2TimAdvancedMsgListener(
       onRecvC2CReadReceipt: (List<V2TimMessageReceipt> receiptList) {
         _onReceiveC2CReadReceipt(receiptList);
@@ -113,7 +115,7 @@ class TUIChatGlobalModel extends ChangeNotifier implements TIMUIKitClass {
     //播放声音
     //https://img.tukuppt.com/newpreview_music/01/66/62/63c0ebd3a5faf753.mp3
 
-    if (!_player.playing) {
+    if (!_player.playing && WBManager().playAudio) {
       _player.play();
     }
   }

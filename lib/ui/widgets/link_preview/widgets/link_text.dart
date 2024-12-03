@@ -158,23 +158,23 @@ class LinkText extends TIMStatelessWidget {
 
   @override
   Widget timBuild(BuildContext context) {
-    return ExtendedText(_getContentSpan(messageText, context), softWrap: true,
+    return SelectionArea(child: ExtendedText(_getContentSpan(messageText, context), softWrap: true,
         onSpecialTextTap: (dynamic parameter) {
-      if (parameter.toString().startsWith('\$')) {
-        if (onLinkTap != null) {
-          onLinkTap!((parameter.toString()).replaceAll('\$', ''));
-        } else {
-          LinkUtils.launchURL(
-              context, (parameter.toString()).replaceAll('\$', ''));
-        }
-      }
-    },
+          if (parameter.toString().startsWith('\$')) {
+            if (onLinkTap != null) {
+              onLinkTap!((parameter.toString()).replaceAll('\$', ''));
+            } else {
+              LinkUtils.launchURL(
+                  context, (parameter.toString()).replaceAll('\$', ''));
+            }
+          }
+        },
         style: style ?? const TextStyle(fontSize: 16.0),
         specialTextSpanBuilder: DefaultSpecialTextSpanBuilder(
           isUseQQPackage: isUseQQPackage,
           isUseTencentCloudChatPackage: isUseTencentCloudChatPackage,
           customEmojiStickerList: customEmojiStickerList,
           showAtBackground: true,
-        ));
+        )));
   }
 }

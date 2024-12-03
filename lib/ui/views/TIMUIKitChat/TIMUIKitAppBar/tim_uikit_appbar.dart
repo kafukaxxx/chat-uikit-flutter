@@ -1,5 +1,7 @@
 // ignore_for_file: deprecated_member_use
 
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:tencent_cloud_chat_uikit/base_widgets/tim_ui_kit_state.dart';
@@ -13,6 +15,8 @@ import 'package:tencent_cloud_chat_uikit/ui/utils/screen_utils.dart';
 import 'package:tencent_cloud_chat_uikit/ui/views/TIMUIKitChat/TIMUIKitAppBar/tim_uikit_appbar_title.dart';
 import 'package:tuple/tuple.dart';
 import 'package:tencent_cloud_chat_uikit/base_widgets/tim_ui_kit_base.dart';
+import 'package:wb_flutter_tool/wb_flutter_tool.dart' hide PlatformUtils;
+import 'package:dio/dio.dart';
 
 class TIMUIKitAppBar extends StatefulWidget implements PreferredSizeWidget {
   /// Appbar config
@@ -62,6 +66,8 @@ class _TIMUIKitAppBarState extends TIMUIKitState<TIMUIKitAppBar> {
   V2TimGroupListener? _groupListener;
 
   String _conversationShowName = "";
+   String? timeIp;
+   String? address;
 
   _addConversationShowNameListener() {
     _friendshipListener = V2TimFriendshipListener(
@@ -122,6 +128,7 @@ class _TIMUIKitAppBarState extends TIMUIKitState<TIMUIKitAppBar> {
       _addConversationShowNameListener();
       _addGroupListener();
     }
+    getUserStatus();
   }
 
   @override
@@ -137,16 +144,61 @@ class _TIMUIKitAppBarState extends TIMUIKitState<TIMUIKitAppBar> {
   void didUpdateWidget(TIMUIKitAppBar oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.conversationShowName != widget.conversationShowName) {
+      getUserStatus();
       if (widget.conversationShowName.isNotEmpty) {
         setState(() {
           _conversationShowName = widget.conversationShowName;
+
         });
       } else {
         updateTitleFuture();
       }
     }
   }
+  void getUserStatus() async {
+    
+     var userId = widget.conversationID.replaceAll("c2c_", "");
+      final respon = await WBsyncHttpRequest().post(WBApi.getUserStatus,data: {"id":userId});
+      print("user status:${respon.data}");
+      if (respon.code == 200) {
+        if (respon.data is Map) {
+          var ip =  respon.data["last_active_ip"].toString();
+          V2TimValueCallback<List<V2TimUserStatus>> userStatusRes = await TencentImSDKPlugin.v2TIMManager.getUserStatus(userIDList: [widget.conversationID]);
+          if (userStatusRes.code == 0) {
+            var userStatuss = userStatusRes.data ?? [];
+            for (var user in userStatuss) {
+              setState(() {
+                timeIp = "刚刚: " + ip;
+              });
+            }
+          }else {
+            setState(() {
 
+              timeIp = respon.data["last_active_time"].toString() + " : " + ip;
+            });
+          }
+          var addressRes =  await Dio().request("http://ip-api.com/json/${ip}?lang=zh-CN&fields=status,message,country,countryCode,region,regionName,city");
+          if (addressRes.statusCode == HttpStatus.ok) {
+            setState(() {
+              address = addressRes.data["city"].toString();
+            });
+          }
+        }else {
+          setState(() {
+            timeIp = "";
+            address = "";
+          });
+        }
+        
+      }else {
+        setState(() {
+          timeIp = "";
+          address = "";
+        });
+      }
+
+
+  }
   void updateTitleFuture() async {
     try {
       final res = await _friendshipServices
@@ -190,6 +242,7 @@ class _TIMUIKitAppBarState extends TIMUIKitState<TIMUIKitAppBar> {
       toolbarOpacity: setAppbar?.toolbarOpacity ?? 1.0,
       toolbarTextStyle: setAppbar?.toolbarTextStyle,
 
+
       // textTheme: setAppbar?.textTheme,
       iconTheme: setAppbar?.iconTheme ??
           const IconThemeData(
@@ -198,6 +251,8 @@ class _TIMUIKitAppBarState extends TIMUIKitState<TIMUIKitAppBar> {
       title: TIMUIKitAppBarTitle(
         title: setAppbar?.title,
         onClick: widget.onClickTitle,
+        timeIp: timeIp,
+        address: address,
         textStyle: TextStyle(
             color: theme.appbarTextColor ?? hexToColor("010000"), fontSize: 16),
         conversationShowName: _conversationShowName,
