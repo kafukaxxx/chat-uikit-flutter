@@ -902,7 +902,7 @@ class _TIMUIKitTextFieldLayoutWideState extends TIMUIKitState<TIMUIKitTextFieldL
         if (!HardwareKeyboard.instance.isPhysicalKeyPressed(PhysicalKeyboardKey.controlLeft) && isInsertFromInput) {
           isInsertFromInput = false;
           var text = await Pasteboard.text;
-          // print('快捷键进来:${event.logicalKey},,,,$text');
+          print('快捷键进来:${event.logicalKey},,,,$text');
           setState(() {
             widget.textEditingController.text = widget.textEditingController.text + (text ?? '');
           });
@@ -917,7 +917,7 @@ class _TIMUIKitTextFieldLayoutWideState extends TIMUIKitState<TIMUIKitTextFieldL
     if ( PlatformUtils().isDesktop && event.logicalKey == LogicalKeyboardKey.insert && isInsertFromInput == true) {
       isInsertFromInput = false;
       var text = await Pasteboard.text;
-      // print('快捷键进来:${event.logicalKey},,,,$text');
+      print('快捷键进来2:${event.logicalKey},,,,$text');
       setState(() {
         widget.textEditingController.text = widget.textEditingController.text + (text ?? '');
       });
@@ -1008,6 +1008,9 @@ class _TIMUIKitTextFieldLayoutWideState extends TIMUIKitState<TIMUIKitTextFieldL
                             keyboardType: TextInputType.multiline,
                             onEditingComplete: () {
                               //   // widget.onSubmitted();
+                            },
+                            extendedContextMenuBuilder: (context,state){
+                              return Container();
                             },
                             textAlignVertical: TextAlignVertical.top,
                             style: const TextStyle(fontSize: 14),
