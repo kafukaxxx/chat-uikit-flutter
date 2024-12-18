@@ -19,10 +19,16 @@ class DGGRedTipsElem extends StatefulWidget {
 class _DGGRedTipsElemState extends TIMUIKitState<DGGRedTipsElem> {
   String tipsText = "";
   @override
-  void initState() async{
+  void initState() {
     // TODO: implement initState
     super.initState();
-    tipsText = await getStringByRedTipsModel(widget.redModel);
+    setTips();
+  }
+  void setTips() async {
+    var tip = await getStringByRedTipsModel(widget.redModel);
+    setState(() {
+      tipsText = tip;
+    });
   }
   @override
   Widget tuiBuild(BuildContext context, TUIKitBuildValue value) {
