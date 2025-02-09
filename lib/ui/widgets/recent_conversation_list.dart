@@ -12,6 +12,8 @@ import 'package:tencent_im_base/tencent_im_base.dart';
 
 import 'package:tencent_cloud_chat_uikit/base_widgets/tim_ui_kit_base.dart';
 
+import '../views/TIMUIKitGroupProfile/widgets/tim_ui_group_member_search.dart';
+
 class RecentForwardList extends StatefulWidget {
   final bool isMultiSelect;
   final Function(List<V2TimConversation> conversationList)? onChanged;
@@ -30,7 +32,9 @@ class _RecentForwardListState extends TIMUIKitState<RecentForwardList> {
   final TUIConversationViewModel _conversationViewModel =
       serviceLocator<TUIConversationViewModel>();
   final List<V2TimConversation> _selectedConversation = [];
+  List<V2TimConversation> _searchedConversation = [];
   bool isAllSelected = false;
+  String searchedKey = "";
   List<ISuspensionBeanImpl<V2TimConversation?>> _buildMemberList(
       List<V2TimConversation?> conversationList) {
     final List<ISuspensionBeanImpl<V2TimConversation?>> showList =
@@ -143,10 +147,10 @@ class _RecentForwardListState extends TIMUIKitState<RecentForwardList> {
               onChanged: (value) {
                 isAllSelected = value;
                 if (value) {
-                  final recentConvList =
-                      serviceLocator<TUIConversationViewModel>()
-                          .conversationList;
-                  for (var item in recentConvList) {
+                  // final recentConvList =
+                  //     serviceLocator<TUIConversationViewModel>()
+                  //         .conversationList;
+                  for (var item in _searchedConversation) {
                     _selectedConversation.add(item!);
                   }
                 } else {
@@ -165,9 +169,9 @@ class _RecentForwardListState extends TIMUIKitState<RecentForwardList> {
                 if (widget.isMultiSelect) {
                   isAllSelected = !isAllSelected;
                   if (isAllSelected) {
-                    final recentConvList =
-                        serviceLocator<TUIConversationViewModel>().conversationList;
-                    for (var item in recentConvList) {
+                    // final recentConvList =
+                    //     serviceLocator<TUIConversationViewModel>().conversationList;
+                    for (var item in _searchedConversation) {
                       _selectedConversation.add(item!);
                     }
                   } else {
@@ -213,11 +217,23 @@ class _RecentForwardListState extends TIMUIKitState<RecentForwardList> {
     );
   }
 
+
   @override
   void dispose() {
     super.dispose();
   }
-
+@override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    final recentConvList =
+        serviceLocator<TUIConversationViewModel>().conversationList;
+    for (var conv in recentConvList) {
+      if (conv != null) {
+        _searchedConversation.add(conv);
+      }
+    }
+  }
   @override
   Widget tuiBuild(BuildContext context, TUIKitBuildValue value) {
     final TUITheme theme = value.theme;
@@ -232,12 +248,28 @@ class _RecentForwardListState extends TIMUIKitState<RecentForwardList> {
       builder: (context, w) {
         final recentConvList =
             serviceLocator<TUIConversationViewModel>().conversationList;
-        final showList = _buildMemberList(recentConvList);
+        final showList = _buildMemberList(_searchedConversation);
         final isDesktopScreen =
             TUIKitScreenUtils.getFormFactor(context) == DeviceType.Desktop;
 
         return Column(
           children: [
+            Positioned(left: 0,height: 65,right: 0,child: GroupMemberSearchTextField(isSearchAddUser: true,onTextChange: (str){
+              setState(() {
+                searchedKey = str;
+                List<V2TimConversation> tmpArr = [];
+                for (var conv in recentConvList) {
+
+                  if (conv?.showName?.contains(searchedKey) ?? false) {
+                    tmpArr.add(conv!);
+                  }
+                }
+                _searchedConversation = tmpArr;
+              });
+              // setState(() {
+              //
+              // });
+            },)),
             if (widget.isMultiSelect)
               SizedBox(
                 height: 50,
