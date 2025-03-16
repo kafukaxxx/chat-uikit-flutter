@@ -174,6 +174,11 @@ class _TIMUIKitHistoryMessageListContainerState
           groupAtInfoList: widget.groupAtInfoList,
           mainHistoryListConfig: widget.mainHistoryListConfig,
           itemBuilder: (context, message) {
+            final isSelf = message?.isSelf ?? true;
+            final needReadReceipt = message?.needReadReceipt ?? false;
+            if (!isSelf && needReadReceipt && message?.msgID != null && message?.userID != null) {
+              model.sendMessageReadReceipts([message!.msgID!]);
+            }
             return TIMUIKitHistoryMessageListItem(
                 customMessageHoverBarOnDesktop:
                     widget.customMessageHoverBarOnDesktop,

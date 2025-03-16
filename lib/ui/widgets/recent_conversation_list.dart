@@ -228,11 +228,17 @@ class _RecentForwardListState extends TIMUIKitState<RecentForwardList> {
     super.initState();
     final recentConvList =
         serviceLocator<TUIConversationViewModel>().conversationList;
+    List<V2TimConversation>temp = [];
     for (var conv in recentConvList) {
       if (conv != null) {
-        _searchedConversation.add(conv);
+        temp.add(conv);
       }
     }
+
+        _searchedConversation = temp;
+
+
+
   }
   @override
   Widget tuiBuild(BuildContext context, TUIKitBuildValue value) {
@@ -254,7 +260,9 @@ class _RecentForwardListState extends TIMUIKitState<RecentForwardList> {
 
         return Column(
           children: [
-            Positioned(left: 0,height: 65,right: 0,child: GroupMemberSearchTextField(isSearchAddUser: true,onTextChange: (str){
+          Container(
+            height: 65,
+            child: GroupMemberSearchTextField(isSearchAddUser: true,onTextChange: (str){
               setState(() {
                 searchedKey = str;
                 List<V2TimConversation> tmpArr = [];
@@ -269,7 +277,8 @@ class _RecentForwardListState extends TIMUIKitState<RecentForwardList> {
               // setState(() {
               //
               // });
-            },)),
+            },),
+          ),
             if (widget.isMultiSelect)
               SizedBox(
                 height: 50,
